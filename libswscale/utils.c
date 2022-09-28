@@ -266,6 +266,10 @@ static const FormatEntry format_entries[] = {
     [AV_PIX_FMT_VUYX]        = { 1, 1 },
     [AV_PIX_FMT_RGBAF16BE]   = { 1, 0 },
     [AV_PIX_FMT_RGBAF16LE]   = { 1, 0 },
+    [AV_PIX_FMT_RGBF32BE]    = { 1, 0 },
+    [AV_PIX_FMT_RGBF32LE]    = { 1, 0 },
+    [AV_PIX_FMT_RGBAF32BE]   = { 1, 0 },
+    [AV_PIX_FMT_RGBAF32LE]   = { 1, 0 },
     [AV_PIX_FMT_XV30LE]      = { 1, 1 },
     [AV_PIX_FMT_XV36LE]      = { 1, 1 },
 };
@@ -1572,6 +1576,8 @@ av_cold int sws_init_context(SwsContext *c, SwsFilter *srcFilter,
         srcFormat != AV_PIX_FMT_GBRAP16BE  && srcFormat != AV_PIX_FMT_GBRAP16LE &&
         srcFormat != AV_PIX_FMT_GBRPF32BE  && srcFormat != AV_PIX_FMT_GBRPF32LE &&
         srcFormat != AV_PIX_FMT_GBRAPF32BE && srcFormat != AV_PIX_FMT_GBRAPF32LE &&
+        srcFormat != AV_PIX_FMT_RGBF32BE   && srcFormat != AV_PIX_FMT_RGBF32LE  &&
+        srcFormat != AV_PIX_FMT_RGBAF32BE  && srcFormat != AV_PIX_FMT_RGBAF32LE  &&
         ((dstW >> c->chrDstHSubSample) <= (srcW >> 1) ||
          (flags & SWS_FAST_BILINEAR)))
         c->chrSrcHSubSample = 1;

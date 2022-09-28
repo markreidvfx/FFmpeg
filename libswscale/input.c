@@ -1284,6 +1284,96 @@ static void rgbaf16##endian_name##ToA_c(uint8_t *_dst, const uint8_t *_src, cons
 rgbaf16_funcs_endian(le, 0)
 rgbaf16_funcs_endian(be, 1)
 
+#define rdpx(src) (is_be ? av_int2float(AV_RB32(&src)): av_int2float(AV_RL32(&src)))
+
+static av_always_inline void rgbaf32ToUV_endian(uint16_t *dstU, uint16_t *dstV, int is_be,
+                                                const float *src, int width,
+                                                int32_t *rgb2yuv, int comp)
+{
+    int32_t ru = rgb2yuv[RU_IDX], gu = rgb2yuv[GU_IDX], bu = rgb2yuv[BU_IDX];
+    int32_t rv = rgb2yuv[RV_IDX], gv = rgb2yuv[GV_IDX], bv = rgb2yuv[BV_IDX];
+    int i;
+    for (i = 0; i < width; i++) {
+        int r = lrintf(av_clipf(65535.0f * rdpx(src[i*comp+0]), 0.0f, 65535.0f));
+        int g = lrintf(av_clipf(65535.0f * rdpx(src[i*comp+1]), 0.0f, 65535.0f));
+        int b = lrintf(av_clipf(65535.0f * rdpx(src[i*comp+2]), 0.0f, 65535.0f));
+
+        dstU[i] = (ru*r + gu*g + bu*b + (0x10001<<(RGB2YUV_SHIFT-1))) >> RGB2YUV_SHIFT;
+        dstV[i] = (rv*r + gv*g + bv*b + (0x10001<<(RGB2YUV_SHIFT-1))) >> RGB2YUV_SHIFT;
+    }
+}
+
+static av_always_inline void rgbaf32ToY_endian(uint16_t *dst, const float *src, int is_be,
+                                               int width, int32_t *rgb2yuv, int comp)
+{
+    int32_t ry = rgb2yuv[RY_IDX], gy = rgb2yuv[GY_IDX], by = rgb2yuv[BY_IDX];
+    int i;
+    for (i = 0; i < width; i++) {
+        int r = lrintf(av_clipf(65535.0f * rdpx(src[i*comp+0]), 0.0f, 65535.0f));
+        int g = lrintf(av_clipf(65535.0f * rdpx(src[i*comp+1]), 0.0f, 65535.0f));
+        int b = lrintf(av_clipf(65535.0f * rdpx(src[i*comp+2]), 0.0f, 65535.0f));
+
+        dst[i] = (ry*r + gy*g + by*b + (0x2001<<(RGB2YUV_SHIFT-1))) >> RGB2YUV_SHIFT;
+    }
+}
+
+static av_always_inline void rgbaf32ToA_endian(uint16_t *dst, const float *src, int is_be,
+                                               int width, void *opq)
+{
+    int i;
+    for (i=0; i<width; i++) {
+        dst[i] = lrintf(av_clipf(65535.0f * rdpx(src[i*4+3]), 0.0f, 65535.0f));
+    }
+}
+
+#undef rdpx
+
+#define rgbaf32_funcs_endian(endian_name, endian)                                                         \
+static void rgbf32##endian_name##ToUV_c(uint8_t *_dstU, uint8_t *_dstV, const uint8_t *unused,            \
+                                         const uint8_t *src1, const uint8_t *src2,                        \
+                                         int width, uint32_t *rgb2yuv, void *opq)                         \
+{                                                                                                         \
+    const float *src = (const float*)src1;                                                                \
+    uint16_t *dstU = (uint16_t*)_dstU;                                                                    \
+    uint16_t *dstV = (uint16_t*)_dstV;                                                                    \
+    av_assert1(src1==src2);                                                                               \
+    rgbaf32ToUV_endian(dstU, dstV, endian, src, width, rgb2yuv, 3);                                       \
+}                                                                                                         \
+static void rgbf32##endian_name##ToY_c(uint8_t *_dst, const uint8_t *_src, const uint8_t *unused0,        \
+                                        const uint8_t *unused1, int width, uint32_t *rgb2yuv, void *opq)  \
+{                                                                                                         \
+    const float *src = (const float*)_src;                                                                \
+    uint16_t *dst = (uint16_t*)_dst;                                                                      \
+    rgbaf32ToY_endian(dst, src, endian, width, rgb2yuv, 3);                                               \
+}                                                                                                         \
+static void rgbaf32##endian_name##ToUV_c(uint8_t *_dstU, uint8_t *_dstV, const uint8_t *unused,           \
+                                         const uint8_t *src1, const uint8_t *src2,                        \
+                                         int width, uint32_t *rgb2yuv, void *opq)                         \
+{                                                                                                         \
+    const float *src = (const float*)src1;                                                                \
+    uint16_t *dstU = (uint16_t*)_dstU;                                                                    \
+    uint16_t *dstV = (uint16_t*)_dstV;                                                                    \
+    av_assert1(src1==src2);                                                                               \
+    rgbaf32ToUV_endian(dstU, dstV, endian, src, width, rgb2yuv, 4);                                       \
+}                                                                                                         \
+static void rgbaf32##endian_name##ToY_c(uint8_t *_dst, const uint8_t *_src, const uint8_t *unused0,       \
+                                        const uint8_t *unused1, int width, uint32_t *rgb2yuv, void *opq)  \
+{                                                                                                         \
+    const float *src = (const float*)_src;                                                                \
+    uint16_t *dst = (uint16_t*)_dst;                                                                      \
+    rgbaf32ToY_endian(dst, src, endian, width, rgb2yuv, 4);                                               \
+}                                                                                                         \
+static void rgbaf32##endian_name##ToA_c(uint8_t *_dst, const uint8_t *_src, const uint8_t *unused0,       \
+                                        const uint8_t *unused1, int width, uint32_t *unused2, void *opq)  \
+{                                                                                                         \
+    const float *src = (const float*)_src;                                                                \
+    uint16_t *dst = (uint16_t*)_dst;                                                                      \
+    rgbaf32ToA_endian(dst, src, endian, width, opq);                                                      \
+}
+
+rgbaf32_funcs_endian(le, 0)
+rgbaf32_funcs_endian(be, 1)
+
 av_cold void ff_sws_init_input_funcs(SwsContext *c)
 {
     enum AVPixelFormat srcFormat = c->srcFormat;
@@ -1663,6 +1753,18 @@ av_cold void ff_sws_init_input_funcs(SwsContext *c)
         case AV_PIX_FMT_RGBAF16LE:
             c->chrToYV12 = rgbaf16leToUV_c;
             break;
+        case AV_PIX_FMT_RGBF32BE:
+            c->chrToYV12 = rgbf32beToUV_c;
+            break;
+        case AV_PIX_FMT_RGBAF32BE:
+            c->chrToYV12 = rgbaf32beToUV_c;
+            break;
+        case AV_PIX_FMT_RGBF32LE:
+            c->chrToYV12 = rgbf32leToUV_c;
+            break;
+        case AV_PIX_FMT_RGBAF32LE:
+            c->chrToYV12 = rgbaf32leToUV_c;
+            break;
         }
     }
 
@@ -1973,6 +2075,18 @@ av_cold void ff_sws_init_input_funcs(SwsContext *c)
     case AV_PIX_FMT_RGBAF16LE:
         c->lumToYV12 = rgbaf16leToY_c;
         break;
+    case AV_PIX_FMT_RGBF32BE:
+        c->lumToYV12 = rgbf32beToY_c;
+        break;
+    case AV_PIX_FMT_RGBAF32BE:
+        c->lumToYV12 = rgbaf32beToY_c;
+        break;
+    case AV_PIX_FMT_RGBF32LE:
+        c->lumToYV12 = rgbf32leToY_c;
+        break;
+    case AV_PIX_FMT_RGBAF32LE:
+        c->lumToYV12 = rgbaf32leToY_c;
+        break;
     }
     if (c->needAlpha) {
         if (is16BPS(srcFormat) || isNBPS(srcFormat)) {
@@ -1997,6 +2111,12 @@ av_cold void ff_sws_init_input_funcs(SwsContext *c)
             break;
         case AV_PIX_FMT_RGBAF16LE:
             c->alpToYV12 = rgbaf16leToA_c;
+            break;
+        case AV_PIX_FMT_RGBAF32BE:
+            c->alpToYV12 = rgbaf32beToA_c;
+            break;
+        case AV_PIX_FMT_RGBAF32LE:
+            c->alpToYV12 = rgbaf32leToA_c;
             break;
         case AV_PIX_FMT_YA8:
             c->alpToYV12 = uyvyToY_c;
