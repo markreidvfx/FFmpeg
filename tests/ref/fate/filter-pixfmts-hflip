@@ -88,6 +88,10 @@ rgb8                68a3a575badadd9e4f90226209f11699
 rgba                51961c723ea6707e0a410cd3f21f15d3
 rgba64be            c910444019f4cfbf4d995227af55da8d
 rgba64le            0c810d8b3a6bca10321788e1cb145340
+rgbaf32be           6077603ed554db4149f82d891e1d1120
+rgbaf32le           3081376a3a9e90fd2849751dfd69094b
+rgbf32be            0e5ffacba8dc768acfa50fc590dddac6
+rgbf32le            542380fd2490e3227b70373eace3bade
 vuya                7e530261e7ac4eae4fd616fd7572d0b8
 vuyx                3ce9890363cad3984521293be1eb679c
 x2bgr10le           827cc659f29378e00c5a7d2c0ada8f9a

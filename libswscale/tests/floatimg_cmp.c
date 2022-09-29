@@ -54,7 +54,9 @@ static const enum AVPixelFormat pix_fmts[] = {
     AV_PIX_FMT_GBRP10LE, AV_PIX_FMT_GBRAP10LE,
     AV_PIX_FMT_GBRP12LE, AV_PIX_FMT_GBRAP12LE,
     AV_PIX_FMT_GBRP14LE,
-    AV_PIX_FMT_GBRP16LE,  AV_PIX_FMT_GBRAP16LE
+    AV_PIX_FMT_GBRP16LE, AV_PIX_FMT_GBRAP16LE,
+    AV_PIX_FMT_RGBF32LE, AV_PIX_FMT_RGBAF32LE,
+    AV_PIX_FMT_RGBF32BE, AV_PIX_FMT_RGBAF32BE
 };
 
 const char *usage =  "floatimg_cmp -pixel_format <pix_fmt> -size <image_size> -ref <testfile>\n";

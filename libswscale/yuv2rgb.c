@@ -999,6 +999,8 @@ av_cold int ff_yuv2rgb_c_init_tables(SwsContext *c, const int inv_table[4],
         break;
     case 32:
     case 64:
+    case 96:
+    case 128:
         base      = (c->dstFormat == AV_PIX_FMT_RGB32_1 ||
                      c->dstFormat == AV_PIX_FMT_BGR32_1) ? 8 : 0;
         rbase     = base + (isRgb ? 16 : 0);

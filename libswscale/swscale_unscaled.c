@@ -2160,7 +2160,9 @@ void ff_get_unscaled_swscale(SwsContext *c)
 
     /* bswap 32 bits per pixel/component formats */
     if (IS_DIFFERENT_ENDIANESS(srcFormat, dstFormat, AV_PIX_FMT_GBRPF32) ||
-        IS_DIFFERENT_ENDIANESS(srcFormat, dstFormat, AV_PIX_FMT_GBRAPF32))
+        IS_DIFFERENT_ENDIANESS(srcFormat, dstFormat, AV_PIX_FMT_GBRAPF32) ||
+        IS_DIFFERENT_ENDIANESS(srcFormat, dstFormat, AV_PIX_FMT_RGBF32)   ||
+        IS_DIFFERENT_ENDIANESS(srcFormat, dstFormat, AV_PIX_FMT_RGBAF32))
         c->convert_unscaled = bswap_32bpc;
 
     if (usePal(srcFormat) && isByteRGB(dstFormat))

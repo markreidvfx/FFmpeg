@@ -90,6 +90,10 @@ rgb8                7ac6008c84d622c2fc50581706e17576
 rgba                b6e1b441c365e03b5ffdf9b7b68d9a0c
 rgba64be            ae2ae04b5efedca3505f47c4dd6ea6ea
 rgba64le            b91e1d77f799eb92241a2d2d28437b15
+rgbaf32be           abb244bb1af2247bbba7b4eac0357f6b
+rgbaf32le           99b2afe809649e58eea0a188fd6ab3f2
+rgbf32be            e4a0b47e8ecb2e7e461915227ebd4edd
+rgbf32le            2979d6bfe509a55486e55e4de63d67d1
 uyvy422             3bcf3c80047592f2211fae3260b1b65d
 vuya                3d5e934651cae1ce334001cb1829ad22
 vuyx                3f68ea6ec492b30d867cb5401562264e

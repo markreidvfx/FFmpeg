@@ -266,10 +266,10 @@ static const FormatEntry format_entries[] = {
     [AV_PIX_FMT_VUYX]        = { 1, 1 },
     [AV_PIX_FMT_RGBAF16BE]   = { 1, 0 },
     [AV_PIX_FMT_RGBAF16LE]   = { 1, 0 },
-    [AV_PIX_FMT_RGBF32BE]    = { 1, 0 },
-    [AV_PIX_FMT_RGBF32LE]    = { 1, 0 },
-    [AV_PIX_FMT_RGBAF32BE]   = { 1, 0 },
-    [AV_PIX_FMT_RGBAF32LE]   = { 1, 0 },
+    [AV_PIX_FMT_RGBF32BE]    = { 1, 1 },
+    [AV_PIX_FMT_RGBF32LE]    = { 1, 1 },
+    [AV_PIX_FMT_RGBAF32BE]   = { 1, 1 },
+    [AV_PIX_FMT_RGBAF32LE]   = { 1, 1 },
     [AV_PIX_FMT_XV30LE]      = { 1, 1 },
     [AV_PIX_FMT_XV36LE]      = { 1, 1 },
 };
@@ -1512,7 +1512,7 @@ av_cold int sws_init_context(SwsContext *c, SwsFilter *srcFilter,
             }
         }
     }
-    if (isPlanarRGB(dstFormat)) {
+    if (isPlanarRGB(dstFormat) || isFloat(dstFormat)) {
         if (!(flags & SWS_FULL_CHR_H_INT)) {
             av_log(c, AV_LOG_DEBUG,
                    "%s output is not supported with half chroma resolution, switching to full\n",
@@ -1544,7 +1544,11 @@ av_cold int sws_init_context(SwsContext *c, SwsFilter *srcFilter,
         dstFormat != AV_PIX_FMT_BGR4_BYTE &&
         dstFormat != AV_PIX_FMT_RGB4_BYTE &&
         dstFormat != AV_PIX_FMT_BGR8 &&
-        dstFormat != AV_PIX_FMT_RGB8
+        dstFormat != AV_PIX_FMT_RGB8 &&
+        dstFormat != AV_PIX_FMT_RGBF32LE &&
+        dstFormat != AV_PIX_FMT_RGBF32BE &&
+        dstFormat != AV_PIX_FMT_RGBAF32LE &&
+        dstFormat != AV_PIX_FMT_RGBAF32BE
     ) {
         av_log(c, AV_LOG_WARNING,
                "full chroma interpolation for destination format '%s' not yet implemented\n",
