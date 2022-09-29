@@ -174,6 +174,46 @@ static void transpose_8x8_64_c(uint8_t *src, ptrdiff_t src_linesize,
     transpose_block_64_c(src, src_linesize, dst, dst_linesize, 8, 8);
 }
 
+static inline void transpose_block_96_c(uint8_t *src, ptrdiff_t src_linesize,
+                                        uint8_t *dst, ptrdiff_t dst_linesize,
+                                        int w, int h)
+{
+    int x, y;
+    for (y = 0; y < h; y++, dst += dst_linesize, src += 12) {
+        for (x = 0; x < w; x++) {
+            *((uint32_t *)(dst+0 + 12*x)) = *((uint32_t *)(src+0 + x*src_linesize));
+            *((uint32_t *)(dst+4 + 12*x)) = *((uint32_t *)(src+4 + x*src_linesize));
+            *((uint32_t *)(dst+8 + 12*x)) = *((uint32_t *)(src+8 + x*src_linesize));
+        }
+    }
+}
+
+static void transpose_8x8_96_c(uint8_t *src, ptrdiff_t src_linesize,
+                               uint8_t *dst, ptrdiff_t dst_linesize)
+{
+    transpose_block_96_c(src, src_linesize, dst, dst_linesize, 8, 8);
+}
+
+
+static inline void transpose_block_128_c(uint8_t *src, ptrdiff_t src_linesize,
+                                         uint8_t *dst, ptrdiff_t dst_linesize,
+                                         int w, int h)
+{
+    int x, y;
+    for (y = 0; y < h; y++, dst += dst_linesize, src += 16) {
+        for (x = 0; x < w; x++) {
+            *((uint64_t *)(dst+0 + 16*x)) = *((uint64_t *)(src+0 + x*src_linesize));
+            *((uint64_t *)(dst+8 + 16*x)) = *((uint64_t *)(src+8 + x*src_linesize));
+        }
+    }
+}
+
+static void transpose_8x8_128_c(uint8_t *src, ptrdiff_t src_linesize,
+                                uint8_t *dst, ptrdiff_t dst_linesize)
+{
+    transpose_block_128_c(src, src_linesize, dst, dst_linesize, 8, 8);
+}
+
 static int config_props_output(AVFilterLink *outlink)
 {
     AVFilterContext *ctx = outlink->src;
@@ -232,6 +272,10 @@ static int config_props_output(AVFilterLink *outlink)
                 v->transpose_8x8   = transpose_8x8_48_c; break;
         case 8: v->transpose_block = transpose_block_64_c;
                 v->transpose_8x8   = transpose_8x8_64_c; break;
+        case 12: v->transpose_block = transpose_block_96_c;
+                 v->transpose_8x8   = transpose_8x8_96_c; break;
+        case 16: v->transpose_block = transpose_block_128_c;
+                 v->transpose_8x8   = transpose_8x8_128_c; break;
         }
     }
 
