@@ -2253,6 +2253,60 @@ static const AVPixFmtDescriptor av_pix_fmt_descriptors[AV_PIX_FMT_NB] = {
         .name = "d3d11",
         .flags = AV_PIX_FMT_FLAG_HWACCEL,
     },
+   [AV_PIX_FMT_GBRPF16BE] = {
+        .name = "gbrpf16be",
+        .nb_components = 3,
+        .log2_chroma_w = 0,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 2, 2, 0, 0, 16 },        /* R */
+            { 0, 2, 0, 0, 16 },        /* G */
+            { 1, 2, 0, 0, 16 },        /* B */
+        },
+        .flags = AV_PIX_FMT_FLAG_BE | AV_PIX_FMT_FLAG_PLANAR |
+                 AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_FLOAT,
+    },
+    [AV_PIX_FMT_GBRPF16LE] = {
+        .name = "gbrpf16le",
+        .nb_components = 3,
+        .log2_chroma_w = 0,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 2, 2, 0, 0, 16 },        /* R */
+            { 0, 2, 0, 0, 16 },        /* G */
+            { 1, 2, 0, 0, 16 },        /* B */
+        },
+        .flags = AV_PIX_FMT_FLAG_PLANAR | AV_PIX_FMT_FLAG_FLOAT | AV_PIX_FMT_FLAG_RGB,
+    },
+    [AV_PIX_FMT_GBRAPF16BE] = {
+        .name = "gbrapf16be",
+        .nb_components = 4,
+        .log2_chroma_w = 0,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 2, 2, 0, 0, 16 },        /* R */
+            { 0, 2, 0, 0, 16 },        /* G */
+            { 1, 2, 0, 0, 16 },        /* B */
+            { 3, 2, 0, 0, 16 },        /* A */
+        },
+        .flags = AV_PIX_FMT_FLAG_BE | AV_PIX_FMT_FLAG_PLANAR |
+                 AV_PIX_FMT_FLAG_ALPHA | AV_PIX_FMT_FLAG_RGB |
+                 AV_PIX_FMT_FLAG_FLOAT,
+    },
+    [AV_PIX_FMT_GBRAPF16LE] = {
+        .name = "gbrapf16le",
+        .nb_components = 4,
+        .log2_chroma_w = 0,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 2, 2, 0, 0, 16 },        /* R */
+            { 0, 2, 0, 0, 16 },        /* G */
+            { 1, 2, 0, 0, 16 },        /* B */
+            { 3, 2, 0, 0, 16 },        /* A */
+        },
+        .flags = AV_PIX_FMT_FLAG_PLANAR | AV_PIX_FMT_FLAG_ALPHA |
+                 AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_FLOAT,
+    },
     [AV_PIX_FMT_GBRPF32BE] = {
         .name = "gbrpf32be",
         .nb_components = 3,
@@ -2314,6 +2368,28 @@ static const AVPixFmtDescriptor av_pix_fmt_descriptors[AV_PIX_FMT_NB] = {
     [AV_PIX_FMT_OPENCL] = {
         .name  = "opencl",
         .flags = AV_PIX_FMT_FLAG_HWACCEL,
+    },
+    [AV_PIX_FMT_GRAYF16BE] = {
+        .name = "grayf16be",
+        .nb_components = 1,
+        .log2_chroma_w = 0,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 0, 2, 0, 0, 16 },       /* Y */
+        },
+        .flags = AV_PIX_FMT_FLAG_BE | AV_PIX_FMT_FLAG_FLOAT,
+        .alias = "yf16be",
+    },
+    [AV_PIX_FMT_GRAYF16LE] = {
+        .name = "grayf16le",
+        .nb_components = 1,
+        .log2_chroma_w = 0,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 0, 2, 0, 0, 16 },       /* Y */
+        },
+        .flags = AV_PIX_FMT_FLAG_FLOAT,
+        .alias = "yf16le",
     },
     [AV_PIX_FMT_GRAYF32BE] = {
         .name = "grayf32be",
@@ -2536,6 +2612,30 @@ static const AVPixFmtDescriptor av_pix_fmt_descriptors[AV_PIX_FMT_NB] = {
             { 0, 4, 1, 0, 8 },        /* U */
             { 0, 4, 0, 0, 8 },        /* V */
         },
+    },
+    [AV_PIX_FMT_RGBF16BE] = {
+        .name = "rgbf16be",
+        .nb_components = 3,
+        .log2_chroma_w = 0,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 0, 6, 0, 0, 16 },       /* R */
+            { 0, 6, 2, 0, 16 },       /* G */
+            { 0, 6, 4, 0, 16 },       /* B */
+        },
+        .flags = AV_PIX_FMT_FLAG_BE | AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_FLOAT,
+    },
+    [AV_PIX_FMT_RGBF16LE] = {
+        .name = "rgbf16le",
+        .nb_components = 3,
+        .log2_chroma_w = 0,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 0, 6, 0, 0, 16 },       /* R */
+            { 0, 6, 2, 0, 16 },       /* G */
+            { 0, 6, 4, 0, 16 },       /* B */
+        },
+        .flags = AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_FLOAT,
     },
     [AV_PIX_FMT_RGBAF16BE] = {
         .name = "rgbaf16be",

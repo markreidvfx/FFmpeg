@@ -392,6 +392,17 @@ enum AVPixelFormat {
     AV_PIX_FMT_RGBAF32BE,   ///< IEEE-754 single precision packed RGBA 32:32:32:32, 128bpp, RGBARGBA..., big-endian
     AV_PIX_FMT_RGBAF32LE,   ///< IEEE-754 single precision packed RGBA 32:32:32:32, 128bpp, RGBARGBA..., little-endian
 
+    AV_PIX_FMT_RGBF16BE,   ///< IEEE-754 half precision packed RGB 16:16:16:16, 48bpp, RGBRGB..., big-endian
+    AV_PIX_FMT_RGBF16LE,   ///< IEEE-754 half precision packed RGB 16:16:16:16, 48bpp, RGBRGB..., little-endian
+
+    AV_PIX_FMT_GBRPF16BE,  ///< IEEE-754 half precision planar GBR  16:16:16,    48bpp, big-endian
+    AV_PIX_FMT_GBRPF16LE,  ///< IEEE-754 half precision planar GBR  16:16:16,    48bpp, little-endian
+    AV_PIX_FMT_GBRAPF16BE, ///< IEEE-754 half precision planar GBRA 16:16:16:16, 64bpp, big-endian
+    AV_PIX_FMT_GBRAPF16LE, ///< IEEE-754 half precision planar GBRA 16:16:16:16, 64bpp, little-endian
+
+    AV_PIX_FMT_GRAYF16BE,  ///< IEEE-754 half precision Y, 16bpp, big-endian
+    AV_PIX_FMT_GRAYF16LE,  ///< IEEE-754 half precision Y, 16bpp, little-endian
+
     AV_PIX_FMT_NB         ///< number of pixel formats, DO NOT USE THIS if you want to link with shared libav* because the number of formats might differ between versions
 };
 
@@ -457,9 +468,13 @@ enum AVPixelFormat {
 #define AV_PIX_FMT_BAYER_GBRG16 AV_PIX_FMT_NE(BAYER_GBRG16BE,    BAYER_GBRG16LE)
 #define AV_PIX_FMT_BAYER_GRBG16 AV_PIX_FMT_NE(BAYER_GRBG16BE,    BAYER_GRBG16LE)
 
+#define AV_PIX_FMT_GBRPF16    AV_PIX_FMT_NE(GBRPF16BE,  GBRPF16LE)
+#define AV_PIX_FMT_GBRAPF16   AV_PIX_FMT_NE(GBRAPF16BE, GBRAPF16LE)
+
 #define AV_PIX_FMT_GBRPF32    AV_PIX_FMT_NE(GBRPF32BE,  GBRPF32LE)
 #define AV_PIX_FMT_GBRAPF32   AV_PIX_FMT_NE(GBRAPF32BE, GBRAPF32LE)
 
+#define AV_PIX_FMT_GRAYF16    AV_PIX_FMT_NE(GRAYF16BE, GRAYF16LE)
 #define AV_PIX_FMT_GRAYF32    AV_PIX_FMT_NE(GRAYF32BE, GRAYF32LE)
 
 #define AV_PIX_FMT_YUVA420P9  AV_PIX_FMT_NE(YUVA420P9BE , YUVA420P9LE)
@@ -493,6 +508,7 @@ enum AVPixelFormat {
 #define AV_PIX_FMT_P216       AV_PIX_FMT_NE(P216BE, P216LE)
 #define AV_PIX_FMT_P416       AV_PIX_FMT_NE(P416BE, P416LE)
 
+#define AV_PIX_FMT_RGBF16    AV_PIX_FMT_NE(RGBF16BE, RGBF16LE)
 #define AV_PIX_FMT_RGBAF16    AV_PIX_FMT_NE(RGBAF16BE, RGBAF16LE)
 
 #define AV_PIX_FMT_RGBF32     AV_PIX_FMT_NE(RGBF32BE, RGBF32LE)
