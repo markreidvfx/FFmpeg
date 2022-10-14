@@ -213,6 +213,10 @@ static const FormatEntry format_entries[] = {
     [AV_PIX_FMT_GBRP14BE]    = { 1, 1 },
     [AV_PIX_FMT_GBRP16LE]    = { 1, 1 },
     [AV_PIX_FMT_GBRP16BE]    = { 1, 1 },
+    [AV_PIX_FMT_GBRPF16LE]   = { 1, 0 },
+    [AV_PIX_FMT_GBRPF16BE]   = { 1, 0 },
+    [AV_PIX_FMT_GBRAPF16LE]  = { 1, 0 },
+    [AV_PIX_FMT_GBRAPF16BE]  = { 1, 0 },
     [AV_PIX_FMT_GBRPF32LE]   = { 1, 1 },
     [AV_PIX_FMT_GBRPF32BE]   = { 1, 1 },
     [AV_PIX_FMT_GBRAPF32LE]  = { 1, 1 },
@@ -241,6 +245,8 @@ static const FormatEntry format_entries[] = {
     [AV_PIX_FMT_P012BE]      = { 1, 1 },
     [AV_PIX_FMT_P016LE]      = { 1, 1 },
     [AV_PIX_FMT_P016BE]      = { 1, 1 },
+    [AV_PIX_FMT_GRAYF16LE]   = { 1, 0 },
+    [AV_PIX_FMT_GRAYF16BE]   = { 1, 0 },
     [AV_PIX_FMT_GRAYF32LE]   = { 1, 1 },
     [AV_PIX_FMT_GRAYF32BE]   = { 1, 1 },
     [AV_PIX_FMT_YUVA422P12BE] = { 1, 1 },
@@ -264,6 +270,8 @@ static const FormatEntry format_entries[] = {
     [AV_PIX_FMT_NV16]        = { 1, 1 },
     [AV_PIX_FMT_VUYA]        = { 1, 1 },
     [AV_PIX_FMT_VUYX]        = { 1, 1 },
+    [AV_PIX_FMT_RGBF16BE]    = { 1, 0 },
+    [AV_PIX_FMT_RGBF16LE]    = { 1, 0 },
     [AV_PIX_FMT_RGBAF16BE]   = { 1, 0 },
     [AV_PIX_FMT_RGBAF16LE]   = { 1, 0 },
     [AV_PIX_FMT_RGBF32BE]    = { 1, 1 },
@@ -1578,6 +1586,10 @@ av_cold int sws_init_context(SwsContext *c, SwsFilter *srcFilter,
         srcFormat != AV_PIX_FMT_GBRP14BE  && srcFormat != AV_PIX_FMT_GBRP14LE &&
         srcFormat != AV_PIX_FMT_GBRP16BE  && srcFormat != AV_PIX_FMT_GBRP16LE &&
         srcFormat != AV_PIX_FMT_GBRAP16BE  && srcFormat != AV_PIX_FMT_GBRAP16LE &&
+        srcFormat != AV_PIX_FMT_GBRPF16BE  && srcFormat != AV_PIX_FMT_GBRPF16LE &&
+        srcFormat != AV_PIX_FMT_GBRAPF16BE && srcFormat != AV_PIX_FMT_GBRAPF16LE &&
+        srcFormat != AV_PIX_FMT_RGBF16BE   && srcFormat != AV_PIX_FMT_RGBF16LE &&
+        srcFormat != AV_PIX_FMT_RGBAF16BE  && srcFormat != AV_PIX_FMT_RGBAF16LE &&
         srcFormat != AV_PIX_FMT_GBRPF32BE  && srcFormat != AV_PIX_FMT_GBRPF32LE &&
         srcFormat != AV_PIX_FMT_GBRAPF32BE && srcFormat != AV_PIX_FMT_GBRAPF32LE &&
         srcFormat != AV_PIX_FMT_RGBF32BE   && srcFormat != AV_PIX_FMT_RGBF32LE  &&

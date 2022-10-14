@@ -262,3 +262,11 @@ rgbf32be        planes: 1, linesizes: 768   0   0   0, plane_sizes: 36864     0 
 rgbf32le        planes: 1, linesizes: 768   0   0   0, plane_sizes: 36864     0     0     0, plane_offsets:     0     0     0, total_size: 36864
 rgbaf32be       planes: 1, linesizes: 1024   0   0   0, plane_sizes: 49152     0     0     0, plane_offsets:     0     0     0, total_size: 49152
 rgbaf32le       planes: 1, linesizes: 1024   0   0   0, plane_sizes: 49152     0     0     0, plane_offsets:     0     0     0, total_size: 49152
+rgbf16be        planes: 1, linesizes: 384   0   0   0, plane_sizes: 18432     0     0     0, plane_offsets:     0     0     0, total_size: 18432
+rgbf16le        planes: 1, linesizes: 384   0   0   0, plane_sizes: 18432     0     0     0, plane_offsets:     0     0     0, total_size: 18432
+gbrpf16be       planes: 3, linesizes: 128 128 128   0, plane_sizes:  6144  6144  6144     0, plane_offsets:  6144  6144     0, total_size: 18432
+gbrpf16le       planes: 3, linesizes: 128 128 128   0, plane_sizes:  6144  6144  6144     0, plane_offsets:  6144  6144     0, total_size: 18432
+gbrapf16be      planes: 4, linesizes: 128 128 128 128, plane_sizes:  6144  6144  6144  6144, plane_offsets:  6144  6144  6144, total_size: 24576
+gbrapf16le      planes: 4, linesizes: 128 128 128 128, plane_sizes:  6144  6144  6144  6144, plane_offsets:  6144  6144  6144, total_size: 24576
+grayf16be       planes: 1, linesizes: 128   0   0   0, plane_sizes:  6144     0     0     0, plane_offsets:     0     0     0, total_size: 6144
+grayf16le       planes: 1, linesizes: 128   0   0   0, plane_sizes:  6144     0     0     0, plane_offsets:     0     0     0, total_size: 6144
