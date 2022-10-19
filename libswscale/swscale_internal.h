@@ -112,9 +112,10 @@ typedef int (*SwsFunc)(struct SwsContext *context, const uint8_t *src[],
  * @param dstW    width of destination in pixels
  * @param dither  ordered dither array of type int16_t and size 8
  * @param offset  Dither offset
+ * @param opq     Opaque data
  */
 typedef void (*yuv2planar1_fn)(const int16_t *src, uint8_t *dest, int dstW,
-                               const uint8_t *dither, int offset);
+                               const uint8_t *dither, int offset, void *opq);
 
 /**
  * Write one line of horizontally scaled data to planar output
@@ -128,10 +129,11 @@ typedef void (*yuv2planar1_fn)(const int16_t *src, uint8_t *dest, int dstW,
  *                      output, this is in uint16_t
  * @param dstW          width of destination pixels
  * @param offset        Dither offset
+ * @param opq           Opaque data
  */
 typedef void (*yuv2planarX_fn)(const int16_t *filter, int filterSize,
                                const int16_t **src, uint8_t *dest, int dstW,
-                               const uint8_t *dither, int offset);
+                               const uint8_t *dither, int offset, void *opq);
 
 /**
  * Write one line of horizontally scaled chroma to interleaved output
@@ -563,6 +565,8 @@ typedef struct SwsContext {
 
     /// Opaque data pointer passed to all input functions.
     void *input_opaque;
+    /// Opaque data pointer passed to output yuv2plane1, yuv2planeX functions.
+    void *output_opaque;
 
     /// Unscaled conversion of luma plane to YV12 for horizontal scaler.
     void (*lumToYV12)(uint8_t *dst, const uint8_t *src, const uint8_t *src2, const uint8_t *src3,

@@ -73,6 +73,6 @@ av_cold void ff_sws_init_output_loongarch(SwsContext *c);
 
 void ff_yuv2planeX_8_lasx(const int16_t *filter, int filterSize,
                           const int16_t **src, uint8_t *dest, int dstW,
-                          const uint8_t *dither, int offset);
+                          const uint8_t *dither, int offset, void *opq);
 
 #endif /* SWSCALE_LOONGARCH_SWSCALE_LOONGARCH_H */

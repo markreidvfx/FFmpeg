@@ -83,7 +83,7 @@ static inline void yuv2planeX_u(const int16_t *filter, int filterSize,
 
 static void FUNC(yuv2planeX)(const int16_t *filter, int filterSize,
                                const int16_t **src, uint8_t *dest, int dstW,
-                               const uint8_t *dither, int offset)
+                               const uint8_t *dither, int offset, void *opq)
 {
     int dst_u = -(uintptr_t)dest & 15;
     int i;

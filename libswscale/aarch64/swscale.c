@@ -160,13 +160,13 @@ ALL_SCALE_FUNCS(neon);
 
 void ff_yuv2planeX_8_neon(const int16_t *filter, int filterSize,
                           const int16_t **src, uint8_t *dest, int dstW,
-                          const uint8_t *dither, int offset);
+                          const uint8_t *dither, int offset, void *opq);
 void ff_yuv2plane1_8_neon(
         const int16_t *src,
         uint8_t *dest,
         int dstW,
         const uint8_t *dither,
-        int offset);
+        int offset, void *opq);
 
 #define ASSIGN_SCALE_FUNC2(hscalefn, filtersize, opt) do {              \
     if (c->srcBpc == 8) {                                               \

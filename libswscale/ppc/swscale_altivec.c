@@ -220,7 +220,7 @@ static void yuv2plane1_float_bswap_altivec(const int32_t *src, uint32_t *dest, i
 #define yuv2plane1_float(template, dest_type, BE_LE) \
 static void yuv2plane1_float ## BE_LE ## _altivec(const int16_t *src, uint8_t *dest, \
                                                   int dstW, \
-                                                  const uint8_t *dither, int offset) \
+                                                  const uint8_t *dither, int offset, void *opq) \
 { \
     template((const int32_t *)src, (dest_type *)dest, dstW); \
 }

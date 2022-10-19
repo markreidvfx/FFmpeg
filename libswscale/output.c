@@ -258,7 +258,7 @@ yuv2planeX_float_c_template(int big_endian, const int16_t *filter, int filterSiz
 
 #define yuv2plane1_float(template, big_endian, BE_LE) \
 static void yuv2plane1_float ## BE_LE ## _c(const int16_t *src, uint8_t *dest, int dstW, \
-                                            const uint8_t *dither, int offset) \
+                                            const uint8_t *dither, int offset, void *opq) \
 { \
     template(big_endian, (const int32_t *)src, (uint32_t *)dest, dstW); \
 }
@@ -266,7 +266,7 @@ static void yuv2plane1_float ## BE_LE ## _c(const int16_t *src, uint8_t *dest, i
 #define yuv2planeX_float(template, big_endian, BE_LE) \
 static void yuv2planeX_float ## BE_LE ## _c(const int16_t *filter, int filterSize, \
                                             const int16_t **src, uint8_t *dest, int dstW, \
-                                            const uint8_t *dither, int offset) \
+                                            const uint8_t *dither, int offset, void *opq) \
 { \
     template(big_endian, filter, filterSize, (const int32_t **)src, (uint32_t *)dest, dstW); \
 }
@@ -322,14 +322,14 @@ yuv2planeX_10_c_template(const int16_t *filter, int filterSize,
 #define yuv2NBPS(bits, BE_LE, is_be, template_size, typeX_t) \
 static void yuv2plane1_ ## bits ## BE_LE ## _c(const int16_t *src, \
                               uint8_t *dest, int dstW, \
-                              const uint8_t *dither, int offset)\
+                              const uint8_t *dither, int offset, void *opq)\
 { \
     yuv2plane1_ ## template_size ## _c_template((const typeX_t *) src, \
                          (uint16_t *) dest, dstW, is_be, bits); \
 }\
 static void yuv2planeX_ ## bits ## BE_LE ## _c(const int16_t *filter, int filterSize, \
                               const int16_t **src, uint8_t *dest, int dstW, \
-                              const uint8_t *dither, int offset)\
+                              const uint8_t *dither, int offset, void *opq)\
 { \
     yuv2planeX_## template_size ## _c_template(filter, \
                          filterSize, (const typeX_t **) src, \
@@ -366,7 +366,7 @@ static void yuv2nv12cX_16BE_c(enum AVPixelFormat dstFormat, const uint8_t *chrDi
 
 static void yuv2planeX_8_c(const int16_t *filter, int filterSize,
                            const int16_t **src, uint8_t *dest, int dstW,
-                           const uint8_t *dither, int offset)
+                           const uint8_t *dither, int offset, void *opq)
 {
     int i;
     for (i=0; i<dstW; i++) {
@@ -380,7 +380,7 @@ static void yuv2planeX_8_c(const int16_t *filter, int filterSize,
 }
 
 static void yuv2plane1_8_c(const int16_t *src, uint8_t *dest, int dstW,
-                           const uint8_t *dither, int offset)
+                           const uint8_t *dither, int offset, void *opq)
 {
     int i;
     for (i=0; i<dstW; i++) {
@@ -493,14 +493,16 @@ static void yuv2p01xcX_c(int big_endian, const uint8_t *chrDither,
 #define yuv2p01x_wrapper(bits)                                                 \
     static void yuv2p0 ## bits ## l1_LE_c(const int16_t *src,                  \
                                           uint8_t *dest, int dstW,             \
-                                          const uint8_t *dither, int offset)   \
+                                          const uint8_t *dither, int offset,   \
+                                          void *opq)                           \
     {                                                                          \
         yuv2p01xl1_c(src, (uint16_t*)dest, dstW, 0, bits);                     \
     }                                                                          \
                                                                                \
     static void yuv2p0 ## bits ## l1_BE_c(const int16_t *src,                  \
                                           uint8_t *dest, int dstW,             \
-                                          const uint8_t *dither, int offset)   \
+                                          const uint8_t *dither, int offset,   \
+                                          void *opq)                           \
     {                                                                          \
         yuv2p01xl1_c(src, (uint16_t*)dest, dstW, 1, bits);                     \
     }                                                                          \
@@ -508,7 +510,8 @@ static void yuv2p01xcX_c(int big_endian, const uint8_t *chrDither,
     static void yuv2p0 ## bits ## lX_LE_c(const int16_t *filter,               \
                                           int filterSize, const int16_t **src, \
                                           uint8_t *dest, int dstW,             \
-                                          const uint8_t *dither, int offset)   \
+                                          const uint8_t *dither, int offset,   \
+                                          void *opq)                           \
     {                                                                          \
         yuv2p01xlX_c(filter, filterSize, src, (uint16_t*)dest, dstW, 0, bits); \
     }                                                                          \
@@ -516,7 +519,8 @@ static void yuv2p01xcX_c(int big_endian, const uint8_t *chrDither,
     static void yuv2p0 ## bits ## lX_BE_c(const int16_t *filter,               \
                                           int filterSize, const int16_t **src, \
                                           uint8_t *dest, int dstW,             \
-                                          const uint8_t *dither, int offset)   \
+                                          const uint8_t *dither, int offset,   \
+                                          void *opq)                           \
     {                                                                          \
         yuv2p01xlX_c(filter, filterSize, src, (uint16_t*)dest, dstW, 1, bits); \
     }                                                                          \

@@ -99,7 +99,7 @@ static void yuv2plane1_8_u(const int16_t *src, uint8_t *dest, int dstW,
 }
 
 static void yuv2plane1_8_vsx(const int16_t *src, uint8_t *dest, int dstW,
-                           const uint8_t *dither, int offset)
+                           const uint8_t *dither, int offset, void *opq)
 {
     const int dst_u = -(uintptr_t)dest & 15;
     int i, j;
@@ -395,7 +395,7 @@ static void yuv2planeX_16_vsx(const int16_t *filter, int filterSize,
 #define yuv2NBPS1(bits, BE_LE, is_be, template_size, typeX_t) \
 static void yuv2plane1_ ## bits ## BE_LE ## _vsx(const int16_t *src, \
                              uint8_t *dest, int dstW, \
-                             const uint8_t *dither, int offset) \
+                             const uint8_t *dither, int offset, void *opq) \
 { \
     yuv2plane1_ ## template_size ## _vsx((const typeX_t *) src, \
                          (uint16_t *) dest, dstW, is_be, bits); \
@@ -404,7 +404,7 @@ static void yuv2plane1_ ## bits ## BE_LE ## _vsx(const int16_t *src, \
 #define yuv2NBPSX(bits, BE_LE, is_be, template_size, typeX_t) \
 static void yuv2planeX_ ## bits ## BE_LE ## _vsx(const int16_t *filter, int filterSize, \
                               const int16_t **src, uint8_t *dest, int dstW, \
-                              const uint8_t *dither, int offset)\
+                              const uint8_t *dither, int offset, void *opq)\
 { \
     yuv2planeX_## template_size ## _vsx(filter, \
                          filterSize, (const typeX_t **) src, \

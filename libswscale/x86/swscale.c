@@ -187,7 +187,7 @@ void ff_yuv2yuvX_ ##opt(const int16_t *filter, int filterSize, int srcOffset, \
                            const uint8_t *dither, int offset); \
 static void yuv2yuvX_ ##opt(const int16_t *filter, int filterSize, \
                            const int16_t **src, uint8_t *dest, int dstW, \
-                           const uint8_t *dither, int offset) \
+                           const uint8_t *dither, int offset, void *opq) \
 { \
     if(dstW > 0) \
         ff_yuv2yuvX_ ##opt(filter, filterSize - 1, 0, dest - offset, dstW + offset, dither, offset); \
@@ -200,12 +200,12 @@ void ff_yuv2yuvX_ ##opt(const int16_t *filter, int filterSize, int srcOffset, \
                            const uint8_t *dither, int offset); \
 static void yuv2yuvX_ ##opt(const int16_t *filter, int filterSize, \
                            const int16_t **src, uint8_t *dest, int dstW, \
-                           const uint8_t *dither, int offset) \
+                           const uint8_t *dither, int offset, void *opq) \
 { \
     int remainder = (dstW % step); \
     int pixelsProcessed = dstW - remainder; \
     if(((uintptr_t)dest) & 15){ \
-        yuv2yuvX_mmxext(filter, filterSize, src, dest, dstW, dither, offset); \
+        yuv2yuvX_mmxext(filter, filterSize, src, dest, dstW, dither, offset, opq); \
         return; \
     } \
     if(pixelsProcessed > 0) \
@@ -268,7 +268,7 @@ SCALE_FUNC(X4, 8, 15, avx2);
 #define VSCALEX_FUNC(size, opt) \
 void ff_yuv2planeX_ ## size ## _ ## opt(const int16_t *filter, int filterSize, \
                                         const int16_t **src, uint8_t *dest, int dstW, \
-                                        const uint8_t *dither, int offset)
+                                        const uint8_t *dither, int offset, void *opq)
 #define VSCALEX_FUNCS(opt) \
     VSCALEX_FUNC(8,  opt); \
     VSCALEX_FUNC(9,  opt); \
@@ -282,7 +282,7 @@ VSCALEX_FUNCS(avx);
 
 #define VSCALE_FUNC(size, opt) \
 void ff_yuv2plane1_ ## size ## _ ## opt(const int16_t *src, uint8_t *dst, int dstW, \
-                                        const uint8_t *dither, int offset)
+                                        const uint8_t *dither, int offset, void *opq)
 #define VSCALE_FUNCS(opt1, opt2) \
     VSCALE_FUNC(8,  opt1); \
     VSCALE_FUNC(9,  opt2); \
