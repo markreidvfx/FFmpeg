@@ -179,7 +179,7 @@ include $(SRC_PATH)/tests/fate/dvvideo.mak
 include $(SRC_PATH)/tests/fate/ea.mak
 include $(SRC_PATH)/tests/fate/exif.mak
 # Must be included after lavf-video.mak
-include $(SRC_PATH)/tests/fate/ffmpeg.mak
+# include $(SRC_PATH)/tests/fate/ffmpeg.mak
 include $(SRC_PATH)/tests/fate/ffprobe.mak
 include $(SRC_PATH)/tests/fate/fft.mak
 include $(SRC_PATH)/tests/fate/fifo-muxer.mak
@@ -189,7 +189,7 @@ include $(SRC_PATH)/tests/fate/filter-video.mak
 include $(SRC_PATH)/tests/fate/fits.mak
 include $(SRC_PATH)/tests/fate/flac.mak
 include $(SRC_PATH)/tests/fate/flvenc.mak
-include $(SRC_PATH)/tests/fate/gapless.mak
+# include $(SRC_PATH)/tests/fate/gapless.mak
 include $(SRC_PATH)/tests/fate/gif.mak
 include $(SRC_PATH)/tests/fate/h264.mak
 include $(SRC_PATH)/tests/fate/hap.mak
@@ -234,7 +234,7 @@ include $(SRC_PATH)/tests/fate/segment.mak
 include $(SRC_PATH)/tests/fate/source.mak
 include $(SRC_PATH)/tests/fate/spdif.mak
 include $(SRC_PATH)/tests/fate/speedhq.mak
-include $(SRC_PATH)/tests/fate/subtitles.mak
+# include $(SRC_PATH)/tests/fate/subtitles.mak
 include $(SRC_PATH)/tests/fate/truehd.mak
 include $(SRC_PATH)/tests/fate/utvideo.mak
 include $(SRC_PATH)/tests/fate/vbn.mak

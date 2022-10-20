@@ -11,8 +11,6 @@ FATE_MOV = fate-mov-3elist \
            fate-mov-invalid-elst-entry-count \
            fate-mov-gpmf-remux \
            fate-mov-440hz-10ms \
-           fate-mov-ibi-elst-starts-b \
-           fate-mov-elst-ends-betn-b-and-i \
            fate-mov-frag-overlap \
            fate-mov-bbi-elst-starts-b \
            fate-mov-neg-firstpts-discard-frames \

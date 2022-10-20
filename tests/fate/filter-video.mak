@@ -631,27 +631,27 @@ FILTER_METADATA_COMMAND = ffprobe$(PROGSSUF)$(EXESUF) -of compact=p=0 -show_entr
 
 SCENEDETECT_DEPS = LAVFI_INDEV FILE_PROTOCOL MOVIE_FILTER SELECT_FILTER  \
                    SCALE_FILTER MOV_DEMUXER SVQ3_DECODER ZLIB
-FATE_METADATA_FILTER-$(call ALLYES, $(SCENEDETECT_DEPS)) += fate-filter-metadata-scenedetect
-fate-filter-metadata-scenedetect: SRC = $(TARGET_SAMPLES)/svq3/Vertical400kbit.sorenson3.mov
-fate-filter-metadata-scenedetect: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;movie='$(SRC)',select=gt(scene\,.25)"
+# FATE_METADATA_FILTER-$(call ALLYES, $(SCENEDETECT_DEPS)) += fate-filter-metadata-scenedetect
+# fate-filter-metadata-scenedetect: SRC = $(TARGET_SAMPLES)/svq3/Vertical400kbit.sorenson3.mov
+# fate-filter-metadata-scenedetect: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;movie='$(SRC)',select=gt(scene\,.25)"
 
-SCDET_DEPS = LAVFI_INDEV FILE_PROTOCOL MOVIE_FILTER SCDET_FILTER SCALE_FILTER \
-                   MOV_DEMUXER SVQ3_DECODER ZLIB
-FATE_METADATA_FILTER-$(call ALLYES, $(SCDET_DEPS)) += fate-filter-metadata-scdet
-fate-filter-metadata-scdet: SRC = $(TARGET_SAMPLES)/svq3/Vertical400kbit.sorenson3.mov
-fate-filter-metadata-scdet: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;movie='$(SRC)',scdet=s=1"
+# SCDET_DEPS = LAVFI_INDEV FILE_PROTOCOL MOVIE_FILTER SCDET_FILTER SCALE_FILTER \
+#                    MOV_DEMUXER SVQ3_DECODER ZLIB
+# FATE_METADATA_FILTER-$(call ALLYES, $(SCDET_DEPS)) += fate-filter-metadata-scdet
+# fate-filter-metadata-scdet: SRC = $(TARGET_SAMPLES)/svq3/Vertical400kbit.sorenson3.mov
+# fate-filter-metadata-scdet: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;movie='$(SRC)',scdet=s=1"
 
 CROPDETECT_DEPS = LAVFI_INDEV FILE_PROTOCOL MOVIE_FILTER MOVIE_FILTER MESTIMATE_FILTER CROPDETECT_FILTER \
                   SCALE_FILTER MOV_DEMUXER H264_DECODER
-FATE_METADATA_FILTER-$(call ALLYES, $(CROPDETECT_DEPS)) += fate-filter-metadata-cropdetect
-fate-filter-metadata-cropdetect: SRC = $(TARGET_SAMPLES)/filter/cropdetect.mp4
-fate-filter-metadata-cropdetect: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;movie='$(SRC)',cropdetect=max_outliers=3"
-FATE_METADATA_FILTER-$(call ALLYES, $(CROPDETECT_DEPS)) += fate-filter-metadata-cropdetect1
-fate-filter-metadata-cropdetect1: SRC = $(TARGET_SAMPLES)/filter/cropdetect1.mp4
-fate-filter-metadata-cropdetect1: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;movie='$(SRC)',mestimate,cropdetect=mode=mvedges,metadata=mode=print"
-FATE_METADATA_FILTER-$(call ALLYES, $(CROPDETECT_DEPS)) += fate-filter-metadata-cropdetect2
-fate-filter-metadata-cropdetect2: SRC = $(TARGET_SAMPLES)/filter/cropdetect2.mp4
-fate-filter-metadata-cropdetect2: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;movie='$(SRC)',mestimate,cropdetect=mode=mvedges,metadata=mode=print"
+# FATE_METADATA_FILTER-$(call ALLYES, $(CROPDETECT_DEPS)) += fate-filter-metadata-cropdetect
+# fate-filter-metadata-cropdetect: SRC = $(TARGET_SAMPLES)/filter/cropdetect.mp4
+# fate-filter-metadata-cropdetect: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;movie='$(SRC)',cropdetect=max_outliers=3"
+# FATE_METADATA_FILTER-$(call ALLYES, $(CROPDETECT_DEPS)) += fate-filter-metadata-cropdetect1
+# fate-filter-metadata-cropdetect1: SRC = $(TARGET_SAMPLES)/filter/cropdetect1.mp4
+# fate-filter-metadata-cropdetect1: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;movie='$(SRC)',mestimate,cropdetect=mode=mvedges,metadata=mode=print"
+# FATE_METADATA_FILTER-$(call ALLYES, $(CROPDETECT_DEPS)) += fate-filter-metadata-cropdetect2
+# fate-filter-metadata-cropdetect2: SRC = $(TARGET_SAMPLES)/filter/cropdetect2.mp4
+# fate-filter-metadata-cropdetect2: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;movie='$(SRC)',mestimate,cropdetect=mode=mvedges,metadata=mode=print"
 
 FREEZEDETECT_DEPS = LAVFI_INDEV MPTESTSRC_FILTER SCALE_FILTER FREEZEDETECT_FILTER
 FATE_METADATA_FILTER-$(call ALLYES, $(FREEZEDETECT_DEPS)) += fate-filter-metadata-freezedetect
@@ -662,33 +662,33 @@ FATE_METADATA_FILTER-$(call ALLYES, $(SIGNALSTATS_DEPS)) += fate-filter-metadata
 fate-filter-metadata-signalstats-yuv420p: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;color=white:duration=1:r=1,signalstats"
 fate-filter-metadata-signalstats-yuv420p10: CMD = run $(FILTER_METADATA_COMMAND) "sws_flags=+accurate_rnd+bitexact;color=white:duration=1:r=1,format=yuv420p10,signalstats"
 
-SILENCEDETECT_DEPS = LAVFI_INDEV FILE_PROTOCOL AMOVIE_FILTER TTA_DEMUXER TTA_DECODER SILENCEDETECT_FILTER
-FATE_METADATA_FILTER-$(call ALLYES, $(SILENCEDETECT_DEPS)) += fate-filter-metadata-silencedetect
-fate-filter-metadata-silencedetect: SRC = $(TARGET_SAMPLES)/lossless-audio/inside.tta
-fate-filter-metadata-silencedetect: CMD = run $(FILTER_METADATA_COMMAND) "amovie='$(SRC)',silencedetect=n=-33.5dB:d=0.2"
+# SILENCEDETECT_DEPS = LAVFI_INDEV FILE_PROTOCOL AMOVIE_FILTER TTA_DEMUXER TTA_DECODER SILENCEDETECT_FILTER
+# FATE_METADATA_FILTER-$(call ALLYES, $(SILENCEDETECT_DEPS)) += fate-filter-metadata-silencedetect
+# fate-filter-metadata-silencedetect: SRC = $(TARGET_SAMPLES)/lossless-audio/inside.tta
+# fate-filter-metadata-silencedetect: CMD = run $(FILTER_METADATA_COMMAND) "amovie='$(SRC)',silencedetect=n=-33.5dB:d=0.2"
 
-EBUR128_METADATA_DEPS = LAVFI_INDEV FILE_PROTOCOL AMOVIE_FILTER FLAC_DEMUXER FLAC_DECODER ARESAMPLE_FILTER EBUR128_FILTER
-FATE_METADATA_FILTER-$(call ALLYES, $(EBUR128_METADATA_DEPS)) += fate-filter-metadata-ebur128
-fate-filter-metadata-ebur128: SRC = $(TARGET_SAMPLES)/filter/seq-3341-7_seq-3342-5-24bit.flac
-fate-filter-metadata-ebur128: CMD = run $(FILTER_METADATA_COMMAND) "amovie='$(SRC)',ebur128=metadata=1"
+# EBUR128_METADATA_DEPS = LAVFI_INDEV FILE_PROTOCOL AMOVIE_FILTER FLAC_DEMUXER FLAC_DECODER ARESAMPLE_FILTER EBUR128_FILTER
+# FATE_METADATA_FILTER-$(call ALLYES, $(EBUR128_METADATA_DEPS)) += fate-filter-metadata-ebur128
+# fate-filter-metadata-ebur128: SRC = $(TARGET_SAMPLES)/filter/seq-3341-7_seq-3342-5-24bit.flac
+# fate-filter-metadata-ebur128: CMD = run $(FILTER_METADATA_COMMAND) "amovie='$(SRC)',ebur128=metadata=1"
 
-READVITC_METADATA_DEPS = FILE_PROTOCOL LAVFI_INDEV MOVIE_FILTER \
-                         AVI_DEMUXER FFVHUFF_DECODER READVITC_FILTER
-FATE_METADATA_FILTER-$(call ALLYES, $(READVITC_METADATA_DEPS)) += fate-filter-metadata-readvitc-def
-fate-filter-metadata-readvitc-def: SRC = $(TARGET_SAMPLES)/filter/sample-vitc.avi
-fate-filter-metadata-readvitc-def: CMD = run $(FILTER_METADATA_COMMAND) "movie='$(SRC)',readvitc"
+# READVITC_METADATA_DEPS = FILE_PROTOCOL LAVFI_INDEV MOVIE_FILTER \
+#                          AVI_DEMUXER FFVHUFF_DECODER READVITC_FILTER
+# FATE_METADATA_FILTER-$(call ALLYES, $(READVITC_METADATA_DEPS)) += fate-filter-metadata-readvitc-def
+# fate-filter-metadata-readvitc-def: SRC = $(TARGET_SAMPLES)/filter/sample-vitc.avi
+# fate-filter-metadata-readvitc-def: CMD = run $(FILTER_METADATA_COMMAND) "movie='$(SRC)',readvitc"
 
-FATE_METADATA_FILTER-$(call ALLYES, $(READVITC_METADATA_DEPS)) += fate-filter-metadata-readvitc-thr
-fate-filter-metadata-readvitc-thr: SRC = $(TARGET_SAMPLES)/filter/sample-vitc.avi
-fate-filter-metadata-readvitc-thr: CMD = run $(FILTER_METADATA_COMMAND) "movie='$(SRC)',readvitc=thr_b=0.3:thr_w=0.5"
+# FATE_METADATA_FILTER-$(call ALLYES, $(READVITC_METADATA_DEPS)) += fate-filter-metadata-readvitc-thr
+# fate-filter-metadata-readvitc-thr: SRC = $(TARGET_SAMPLES)/filter/sample-vitc.avi
+# fate-filter-metadata-readvitc-thr: CMD = run $(FILTER_METADATA_COMMAND) "movie='$(SRC)',readvitc=thr_b=0.3:thr_w=0.5"
 
-AVF_PHASE_METER_DEPS = FFPROBE LAVFI_INDEV AMOVIE_FILTER FLAC_DEMUXER FLAC_DECODER SINE_FILTER APHASEMETER_FILTER ARESAMPLE_FILTER
-FATE_METADATA_FILTER-$(call ALLYES, $(AVF_PHASE_METER_DEPS)) += fate-filter-metadata-avf-aphase-meter-mono
-fate-filter-metadata-avf-aphase-meter-mono: CMD = run $(FILTER_METADATA_COMMAND) sine="frequency=1000:sample_rate=48000:duration=1,aphasemeter=video=0"
+# AVF_PHASE_METER_DEPS = FFPROBE LAVFI_INDEV AMOVIE_FILTER FLAC_DEMUXER FLAC_DECODER SINE_FILTER APHASEMETER_FILTER ARESAMPLE_FILTER
+# FATE_METADATA_FILTER-$(call ALLYES, $(AVF_PHASE_METER_DEPS)) += fate-filter-metadata-avf-aphase-meter-mono
+# fate-filter-metadata-avf-aphase-meter-mono: CMD = run $(FILTER_METADATA_COMMAND) sine="frequency=1000:sample_rate=48000:duration=1,aphasemeter=video=0"
 
-FATE_METADATA_FILTER-$(call ALLYES, $(AVF_PHASE_METER_DEPS) FILE_PROTOCOL) += fate-filter-metadata-avf-aphase-meter-out-of-phase
-fate-filter-metadata-avf-aphase-meter-out-of-phase: SRC = $(TARGET_SAMPLES)/filter/out-of-phase-1000hz.flac
-fate-filter-metadata-avf-aphase-meter-out-of-phase: CMD = run $(FILTER_METADATA_COMMAND) "amovie='$(SRC)',aphasemeter=video=0"
+# FATE_METADATA_FILTER-$(call ALLYES, $(AVF_PHASE_METER_DEPS) FILE_PROTOCOL) += fate-filter-metadata-avf-aphase-meter-out-of-phase
+# fate-filter-metadata-avf-aphase-meter-out-of-phase: SRC = $(TARGET_SAMPLES)/filter/out-of-phase-1000hz.flac
+# fate-filter-metadata-avf-aphase-meter-out-of-phase: CMD = run $(FILTER_METADATA_COMMAND) "amovie='$(SRC)',aphasemeter=video=0"
 
 FATE_FILTER_SAMPLES-$(call TRANSCODE, RAWVIDEO H264, MOV, ARESAMPLE_FILTER  AAC_FIXED_DECODER) += fate-filter-meta-4560-rotate0
 fate-filter-meta-4560-rotate0: CMD = transcode "mov -display_rotation:v:0 0" $(TARGET_SAMPLES)/filter/sample-in-issue-505.mov mov "-c copy" "-af aresample" "" "" "-flags +bitexact -c:a aac_fixed"
@@ -727,4 +727,5 @@ FATE_FFMPEG += $(FATE_FILTER-yes)
 
 fate-vfilter: $(FATE_FILTER-yes) $(FATE_FILTER_SAMPLES-yes) $(FATE_FILTER_VSYNTH-yes)
 
-fate-filter: fate-afilter fate-vfilter $(FATE_METADATA_FILTER-yes)
+fate-filter: fate-afilter fate-vfilter
+# $(FATE_METADATA_FILTER-yes)
