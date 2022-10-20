@@ -1952,6 +1952,8 @@ static int planarCopyWrapper(SwsContext *c, const uint8_t *src[],
             } else {
                 if (is16BPS(c->srcFormat) && is16BPS(c->dstFormat))
                     length *= 2;
+                else if (is32BPS(c->srcFormat) && is32BPS(c->dstFormat))
+                    length *= 4;
                 else if (desc_src->comp[0].depth == 1)
                     length >>= 3; // monowhite/black
                 for (i = 0; i < height; i++) {
@@ -2211,9 +2213,10 @@ void ff_get_unscaled_swscale(SwsContext *c)
     if ( srcFormat == dstFormat ||
         (srcFormat == AV_PIX_FMT_YUVA420P && dstFormat == AV_PIX_FMT_YUV420P) ||
         (srcFormat == AV_PIX_FMT_YUV420P && dstFormat == AV_PIX_FMT_YUVA420P) ||
-        (isFloat(srcFormat) == isFloat(dstFormat)) && ((isPlanarYUV(srcFormat) && isPlanarGray(dstFormat)) ||
-        (isPlanarYUV(dstFormat) && isPlanarGray(srcFormat)) ||
-        (isPlanarGray(dstFormat) && isPlanarGray(srcFormat)) ||
+        ((isPlanarYUV(srcFormat) && isPlanarGray(dstFormat) && !isFloat(dstFormat)) ||
+        (isPlanarYUV(dstFormat) && isPlanarGray(srcFormat) && !isFloat(srcFormat)) ||
+        (isPlanarGray(dstFormat) && isPlanarGray(srcFormat) &&
+         isFloat(dstFormat) == isFloat(srcFormat) && isFloat16(dstFormat) == isFloat16(srcFormat)) ||
         (isPlanarYUV(srcFormat) && isPlanarYUV(dstFormat) &&
          c->chrDstHSubSample == c->chrSrcHSubSample &&
          c->chrDstVSubSample == c->chrSrcVSubSample &&

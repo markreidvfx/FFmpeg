@@ -227,7 +227,7 @@ yuv2nv12cX_16_c_template(int big_endian, const uint8_t *chrDither,
     }
 
 static av_always_inline void
-yuv2plane1_float_c_template(int big_endian, const int32_t *src, uint32_t *dest, int dstW)
+yuv2plane1_f32_c_template(int big_endian, const int32_t *src, uint32_t *dest, int dstW)
 {
     static const int shift = 3;
     static const float float_mult = 1.0f / 65535.0f;
@@ -240,8 +240,8 @@ yuv2plane1_float_c_template(int big_endian, const int32_t *src, uint32_t *dest, 
 }
 
 static av_always_inline void
-yuv2planeX_float_c_template(int big_endian, const int16_t *filter, int filterSize, const int32_t **src,
-                            uint32_t *dest, int dstW)
+yuv2planeX_f32_c_template(int big_endian, const int16_t *filter, int filterSize, const int32_t **src,
+                          uint32_t *dest, int dstW)
 {
     static const int shift = 15;
     static const float float_mult = 1.0f / 65535.0f;
@@ -256,27 +256,77 @@ yuv2planeX_float_c_template(int big_endian, const int16_t *filter, int filterSiz
     }
 }
 
-#define yuv2plane1_float(template, big_endian, BE_LE) \
-static void yuv2plane1_float ## BE_LE ## _c(const int16_t *src, uint8_t *dest, int dstW, \
-                                            const uint8_t *dither, int offset, void *opq) \
-{ \
-    template(big_endian, (const int32_t *)src, (uint32_t *)dest, dstW); \
+#undef output_pixel
+
+#define output_pixel(pos, val, bias, signedness)                                                                                 \
+    if (big_endian) {                                                                                                            \
+        AV_WB16(pos, float2half(av_float2int(float_mult * (float)(bias + av_clip_ ## signedness ## 16(val >> shift))), f2h_tb)); \
+    } else {                                                                                                                     \
+        AV_WL16(pos, float2half(av_float2int(float_mult * (float)(bias + av_clip_ ## signedness ## 16(val >> shift))), f2h_tb)); \
+    }
+
+static av_always_inline void
+yuv2plane1_f16_c_template(int big_endian, const int32_t *src, uint16_t *dest, int dstW, Float2HalfTables *f2h_tb)
+{
+    static const int shift = 3;
+    static const float float_mult = 1.0f / 65535.0f;
+    int i, val;
+
+    for (i = 0; i < dstW; ++i){
+        val = src[i] + (1 << (shift - 1));
+        output_pixel(&dest[i], val, 0, uint);
+    }
 }
 
-#define yuv2planeX_float(template, big_endian, BE_LE) \
-static void yuv2planeX_float ## BE_LE ## _c(const int16_t *filter, int filterSize, \
-                                            const int16_t **src, uint8_t *dest, int dstW, \
-                                            const uint8_t *dither, int offset, void *opq) \
-{ \
-    template(big_endian, filter, filterSize, (const int32_t **)src, (uint32_t *)dest, dstW); \
-}
+static av_always_inline void
+yuv2planeX_f16_c_template(int big_endian, const int16_t *filter, int filterSize, const int32_t **src,
+                          uint16_t *dest, int dstW, Float2HalfTables *f2h_tb)
+{
+    static const int shift = 15;
+    static const float float_mult = 1.0f / 65535.0f;
+    int i, j, val;
 
-yuv2plane1_float(yuv2plane1_float_c_template, 1, BE)
-yuv2plane1_float(yuv2plane1_float_c_template, 0, LE)
-yuv2planeX_float(yuv2planeX_float_c_template, 1, BE)
-yuv2planeX_float(yuv2planeX_float_c_template, 0, LE)
+    for (i = 0; i < dstW; ++i){
+        val = (1 << (shift - 1)) - 0x40000000;
+        for (j = 0; j < filterSize; ++j){
+            val += src[j][i] * (unsigned)filter[j];
+        }
+        output_pixel(&dest[i], val, 0x8000, int);
+    }
+}
 
 #undef output_pixel
+
+#define yuv2plane1_float(template, big_endian, BE_LE)                                         \
+static void yuv2plane1_f32 ## BE_LE ## _c(const int16_t *src, uint8_t *dest, int dstW,        \
+                                            const uint8_t *dither, int offset, void *opq)     \
+{                                                                                             \
+    template##_f32_c_template(big_endian, (const int32_t *)src, (uint32_t *)dest, dstW);      \
+}                                                                                             \
+static void yuv2plane1_f16 ## BE_LE ## _c(const int16_t *src, uint8_t *dest, int dstW,        \
+                                            const uint8_t *dither, int offset, void *opq)     \
+{                                                                                             \
+    template##_f16_c_template(big_endian, (const int32_t *)src, (uint16_t *)dest, dstW, opq); \
+}
+
+#define yuv2planeX_float(template, big_endian, BE_LE)                                                              \
+static void yuv2planeX_f32 ## BE_LE ## _c(const int16_t *filter, int filterSize,                                   \
+                                            const int16_t **src, uint8_t *dest, int dstW,                          \
+                                            const uint8_t *dither, int offset, void *opq)                          \
+{                                                                                                                  \
+    template##_f32_c_template(big_endian, filter, filterSize, (const int32_t **)src, (uint32_t *)dest, dstW);      \
+}                                                                                                                  \
+static void yuv2planeX_f16 ## BE_LE ## _c(const int16_t *filter, int filterSize,                                   \
+                                            const int16_t **src, uint8_t *dest, int dstW,                          \
+                                            const uint8_t *dither, int offset, void *opq)                          \
+{                                                                                                                  \
+    template##_f16_c_template(big_endian, filter, filterSize, (const int32_t **)src, (uint16_t *)dest, dstW, opq); \
+}
+
+yuv2plane1_float(yuv2plane1, 1, BE)
+yuv2plane1_float(yuv2plane1, 0, LE)
+yuv2planeX_float(yuv2planeX, 1, BE)
+yuv2planeX_float(yuv2planeX, 0, LE)
 
 #define output_pixel(pos, val) \
     if (big_endian) { \
@@ -3025,7 +3075,7 @@ av_cold void ff_sws_init_output_funcs(SwsContext *c,
             *yuv2nv12cX = isBE(dstFormat) ? yuv2p012cX_BE_c : yuv2p012cX_LE_c;
         } else
             av_assert0(0);
-    } else if (is16BPS(dstFormat)) {
+    } else if (is16BPS(dstFormat) && !isFloat(dstFormat)) {
         *yuv2planeX = isBE(dstFormat) ? yuv2planeX_16BE_c  : yuv2planeX_16LE_c;
         *yuv2plane1 = isBE(dstFormat) ? yuv2plane1_16BE_c  : yuv2plane1_16LE_c;
         if (isSemiPlanarYUV(dstFormat)) {
@@ -3047,11 +3097,17 @@ av_cold void ff_sws_init_output_funcs(SwsContext *c,
         } else
             av_assert0(0);
     } else if (dstFormat == AV_PIX_FMT_GRAYF32BE) {
-        *yuv2planeX = yuv2planeX_floatBE_c;
-        *yuv2plane1 = yuv2plane1_floatBE_c;
+        *yuv2planeX = yuv2planeX_f32BE_c;
+        *yuv2plane1 = yuv2plane1_f32BE_c;
     } else if (dstFormat == AV_PIX_FMT_GRAYF32LE) {
-        *yuv2planeX = yuv2planeX_floatLE_c;
-        *yuv2plane1 = yuv2plane1_floatLE_c;
+        *yuv2planeX = yuv2planeX_f32LE_c;
+        *yuv2plane1 = yuv2plane1_f32LE_c;
+    } else if (dstFormat == AV_PIX_FMT_GRAYF16BE) {
+        *yuv2planeX = yuv2planeX_f16BE_c;
+        *yuv2plane1 = yuv2plane1_f16BE_c;
+    } else if (dstFormat == AV_PIX_FMT_GRAYF16LE) {
+        *yuv2planeX = yuv2planeX_f16LE_c;
+        *yuv2plane1 = yuv2plane1_f16LE_c;
     } else {
         *yuv2plane1 = yuv2plane1_8_c;
         *yuv2planeX = yuv2planeX_8_c;

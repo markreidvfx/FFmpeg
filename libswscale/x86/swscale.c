@@ -509,7 +509,7 @@ switch(c->dstBpc){ \
     }
 #define ASSIGN_VSCALE_FUNC(vscalefn, opt) \
     switch(c->dstBpc){ \
-    case 16: if (!isBE(c->dstFormat)) vscalefn = ff_yuv2plane1_16_ ## opt; break; \
+    case 16: if (!isBE(c->dstFormat) && !isFloat(c->dstFormat)) vscalefn = ff_yuv2plane1_16_ ## opt; break; \
     case 10: if (!isBE(c->dstFormat) && !isSemiPlanarYUV(c->dstFormat)) vscalefn = ff_yuv2plane1_10_ ## opt; break; \
     case 9:  if (!isBE(c->dstFormat)) vscalefn = ff_yuv2plane1_9_  ## opt;  break; \
     case 8:                           vscalefn = ff_yuv2plane1_8_  ## opt;  break; \
@@ -582,9 +582,9 @@ switch(c->dstBpc){ \
         ASSIGN_SSE_SCALE_FUNC(c->hyScale, c->hLumFilterSize, sse4, ssse3);
         ASSIGN_SSE_SCALE_FUNC(c->hcScale, c->hChrFilterSize, sse4, ssse3);
         ASSIGN_VSCALEX_FUNC(c->yuv2planeX, sse4,
-                            if (!isBE(c->dstFormat)) c->yuv2planeX = ff_yuv2planeX_16_sse4,
+                            if (!isBE(c->dstFormat) && !isFloat(c->dstFormat)) c->yuv2planeX = ff_yuv2planeX_16_sse4,
                             HAVE_ALIGNED_STACK || ARCH_X86_64);
-        if (c->dstBpc == 16 && !isBE(c->dstFormat) && !(c->flags & SWS_ACCURATE_RND))
+        if (c->dstBpc == 16 && !isBE(c->dstFormat) && !isFloat(c->dstFormat) && !(c->flags & SWS_ACCURATE_RND))
             c->yuv2plane1 = ff_yuv2plane1_16_sse4;
     }
 

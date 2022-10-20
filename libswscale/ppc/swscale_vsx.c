@@ -2102,13 +2102,12 @@ av_cold void ff_sws_init_swscale_vsx(SwsContext *c)
         }
     }
     if (!is16BPS(dstFormat) && !isNBPS(dstFormat) && !isSemiPlanarYUV(dstFormat) &&
-        dstFormat != AV_PIX_FMT_GRAYF32BE && dstFormat != AV_PIX_FMT_GRAYF32LE &&
-        !c->needAlpha) {
+        !isFloat(dstFormat) && !c->needAlpha) {
         c->yuv2planeX = yuv2planeX_vsx;
     }
 #endif
 
-    if (!(c->flags & (SWS_BITEXACT | SWS_FULL_CHR_H_INT)) && !c->needAlpha) {
+    if (!(c->flags & (SWS_BITEXACT | SWS_FULL_CHR_H_INT)) && !c->needAlpha && !isFloat(dstFormat)) {
         switch (c->dstBpc) {
         case 8:
             c->yuv2plane1 = yuv2plane1_8_vsx;

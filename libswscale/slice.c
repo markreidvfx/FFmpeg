@@ -288,6 +288,7 @@ int ff_init_filters(SwsContext * c)
         if (!c->f2h_tables)
             return AVERROR(ENOMEM);
         ff_init_float2half_tables(c->f2h_tables);
+        c->output_opaque = c->f2h_tables;
     }
 
     c->desc  = av_calloc(c->numDesc,  sizeof(*c->desc));
