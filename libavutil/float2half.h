@@ -29,7 +29,7 @@ typedef struct Float2HalfTables {
     uint8_t dummy;
 #else
     uint16_t basetable[512];
-    uint8_t shifttable[512];
+    uint8_t shifttable[512]; // first bit used to indicate rounding is needed
 #endif
 } Float2HalfTables;
 
@@ -46,9 +46,24 @@ static inline uint16_t float2half(uint32_t f, const Float2HalfTables *t)
     return u.i;
 #else
     uint16_t h;
+    int i = (f >> 23) & 0x01FF;
+    int shift = t->shifttable[i] >> 1;
+    uint16_t round = t->shifttable[i] & 1;
 
-    h = t->basetable[(f >> 23) & 0x1ff] + ((f & 0x007fffff) >> t->shifttable[(f >> 23) & 0x1ff]);
+    // bit shifting can lose nan, ensures nan stays nan
+    uint16_t keep_nan = ((f & 0x7FFFFFFF) > 0x7F800000) << 9;
+    // guard bit (most significant discarded bit)
+    uint16_t g = ((f | 0x00800000) >> (shift - 1)) & round;
+    // sticky bit (all but the most significant discarded bits)
+    uint16_t s = (f & ((1 << (shift - 1)) - 1)) != 0;
 
+    h = t->basetable[i] + ((f & 0x007FFFFF) >> shift);
+
+    // round to nearest, ties to even
+    h += (g & (s | h));
+
+    // or 0x0200 if nan
+    h |= keep_nan;
     return h;
 #endif
 }
