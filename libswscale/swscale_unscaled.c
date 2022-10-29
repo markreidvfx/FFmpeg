@@ -565,146 +565,139 @@ static int palToRgbWrapper(SwsContext *c, const uint8_t *src[], int srcStride[],
     return srcSliceH;
 }
 
-static void packed16togbra16(const uint8_t *src, int srcStride,
-                             uint16_t *dst[], int dstStride[], int srcSliceH,
-                             int src_alpha, int swap, int shift, int width)
+// u16 -> u16
+#define SRC_FLOAT 0
+#define DST_FLOAT 0
+#define RENAME(x,y) x##16##y##16
+#include "rgb2rgb_unscaled_template.c"
+
+// u16 -> f32
+#define SRC_FLOAT 0
+#define DST_FLOAT 1
+#define RENAME(x,y) x##16##y##f32
+#include "rgb2rgb_unscaled_template.c"
+
+// u16 -> f16
+#define SRC_FLOAT 0
+#define DST_FLOAT 1
+#define DST_F16
+#define RENAME(x,y) x##16##y##f16
+#include "rgb2rgb_unscaled_template.c"
+
+// f16 -> f16
+#define SRC_FLOAT 1
+#define DST_FLOAT 1
+#define SRC_F16
+#define DST_F16
+#define RENAME(x,y) x##f16##y##f16
+#include "rgb2rgb_unscaled_template.c"
+
+// f16 -> u16
+#define SRC_FLOAT 1
+#define DST_FLOAT 0
+#define SRC_F16
+#define RENAME(x,y) x##f16##y##16
+#include "rgb2rgb_unscaled_template.c"
+
+// f16 -> f32
+#define SRC_FLOAT 1
+#define DST_FLOAT 1
+#define SRC_F16
+#define RENAME(x,y) x##f16##y##f32
+#include "rgb2rgb_unscaled_template.c"
+
+// f32 -> f32
+#define SRC_FLOAT 1
+#define DST_FLOAT 1
+#define RENAME(x,y) x##f32##y##f32
+#include "rgb2rgb_unscaled_template.c"
+
+// f32 -> u16
+#define SRC_FLOAT 1
+#define DST_FLOAT 0
+#define RENAME(x,y) x##f32##y##16
+#include "rgb2rgb_unscaled_template.c"
+
+// f32 -> f16
+#define SRC_FLOAT 1
+#define DST_FLOAT 1
+#define DST_F16
+#define RENAME(x,y) x##f32##y##f16
+#include "rgb2rgb_unscaled_template.c"
+
+static void RgbaXXtoPlanargbrapXX(SwsContext *c, const uint8_t *src, int srcStride,
+                                  uint8_t **dst, int dstStride[], int srcSliceH,
+                                  int src_alpha, int swap,
+                                  const AVPixFmtDescriptor *srcFormat,
+                                  const AVPixFmtDescriptor *dstFormat,
+                                  int width)
 {
-    int x, h, i;
-    int dst_alpha = dst[3] != NULL;
-    for (h = 0; h < srcSliceH; h++) {
-        uint16_t *src_line = (uint16_t *)(src + srcStride * h);
-        switch (swap) {
-        case 3:
-            if (src_alpha && dst_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    dst[1][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    dst[2][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    dst[3][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                }
-            } else if (dst_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    dst[1][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    dst[2][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    dst[3][x] = 0xFFFF;
-                }
-            } else if (src_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    dst[1][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    dst[2][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    src_line++;
-                }
-            } else {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    dst[1][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                    dst[2][x] = av_bswap16(av_bswap16(*src_line++) >> shift);
-                }
-            }
-            break;
-        case 2:
-            if (src_alpha && dst_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(*src_line++ >> shift);
-                    dst[1][x] = av_bswap16(*src_line++ >> shift);
-                    dst[2][x] = av_bswap16(*src_line++ >> shift);
-                    dst[3][x] = av_bswap16(*src_line++ >> shift);
-                }
-            } else if (dst_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(*src_line++ >> shift);
-                    dst[1][x] = av_bswap16(*src_line++ >> shift);
-                    dst[2][x] = av_bswap16(*src_line++ >> shift);
-                    dst[3][x] = 0xFFFF;
-                }
-            } else if (src_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(*src_line++ >> shift);
-                    dst[1][x] = av_bswap16(*src_line++ >> shift);
-                    dst[2][x] = av_bswap16(*src_line++ >> shift);
-                    src_line++;
-                }
-            } else {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(*src_line++ >> shift);
-                    dst[1][x] = av_bswap16(*src_line++ >> shift);
-                    dst[2][x] = av_bswap16(*src_line++ >> shift);
-                }
-            }
-            break;
-        case 1:
-            if (src_alpha && dst_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(*src_line++) >> shift;
-                    dst[1][x] = av_bswap16(*src_line++) >> shift;
-                    dst[2][x] = av_bswap16(*src_line++) >> shift;
-                    dst[3][x] = av_bswap16(*src_line++) >> shift;
-                }
-            } else if (dst_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(*src_line++) >> shift;
-                    dst[1][x] = av_bswap16(*src_line++) >> shift;
-                    dst[2][x] = av_bswap16(*src_line++) >> shift;
-                    dst[3][x] = 0xFFFF;
-                }
-            } else if (src_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(*src_line++) >> shift;
-                    dst[1][x] = av_bswap16(*src_line++) >> shift;
-                    dst[2][x] = av_bswap16(*src_line++) >> shift;
-                    src_line++;
-                }
-            } else {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = av_bswap16(*src_line++) >> shift;
-                    dst[1][x] = av_bswap16(*src_line++) >> shift;
-                    dst[2][x] = av_bswap16(*src_line++) >> shift;
-                }
-            }
-            break;
-        default:
-            if (src_alpha && dst_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = *src_line++ >> shift;
-                    dst[1][x] = *src_line++ >> shift;
-                    dst[2][x] = *src_line++ >> shift;
-                    dst[3][x] = *src_line++ >> shift;
-                }
-            } else if (dst_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = *src_line++ >> shift;
-                    dst[1][x] = *src_line++ >> shift;
-                    dst[2][x] = *src_line++ >> shift;
-                    dst[3][x] = 0xFFFF;
-                }
-            } else if (src_alpha) {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = *src_line++ >> shift;
-                    dst[1][x] = *src_line++ >> shift;
-                    dst[2][x] = *src_line++ >> shift;
-                    src_line++;
-                }
-            } else {
-                for (x = 0; x < width; x++) {
-                    dst[0][x] = *src_line++ >> shift;
-                    dst[1][x] = *src_line++ >> shift;
-                    dst[2][x] = *src_line++ >> shift;
-                }
-            }
+    int src_float = srcFormat->flags & AV_PIX_FMT_FLAG_FLOAT;
+    int dst_float = dstFormat->flags & AV_PIX_FMT_FLAG_FLOAT;
+    int src_depth = srcFormat->comp[0].depth;
+    int dst_depth = dstFormat->comp[0].depth;
+
+    if (src_float && dst_float) {
+        if (src_depth == 32 && dst_depth == 32) {
+            rgbaf32_to_planar_gbrapf32(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, src_alpha, swap,
+                                       src_depth, dst_depth, width);
+        } else if (src_depth == 16 && dst_depth == 32) {
+            rgbaf16_to_planar_gbrapf32(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, src_alpha, swap,
+                                       src_depth, dst_depth, width);
+        } else if (src_depth == 32 && dst_depth == 16) {
+            rgbaf32_to_planar_gbrapf16(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, src_alpha, swap,
+                                       src_depth, dst_depth, width);
+        } else if (src_depth == 16 && dst_depth == 16) {
+            rgbaf16_to_planar_gbrapf16(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, src_alpha, swap,
+                                       src_depth, dst_depth, width);
+        } else {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   srcFormat->name, dstFormat->name);
         }
-        for (i = 0; i < 4; i++)
-            dst[i] += dstStride[i] >> 1;
+    } else if (src_float && !dst_float) {
+        if (src_depth == 32) {
+            rgbaf32_to_planar_gbrap16(c, src, srcStride,
+                                      dst, dstStride, srcSliceH, src_alpha, swap,
+                                      src_depth, dst_depth, width);
+        } else if (src_depth == 16) {
+            rgbaf16_to_planar_gbrap16(c, src, srcStride,
+                                      dst, dstStride, srcSliceH, src_alpha, swap,
+                                      src_depth, dst_depth, width);
+        } else  {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   srcFormat->name, dstFormat->name);
+        }
+
+    } else if (!src_float && dst_float) {
+        if (dst_depth == 32) {
+            rgba16_to_planar_gbrapf32(c, src, srcStride,
+                                      dst, dstStride, srcSliceH, src_alpha, swap,
+                                      src_depth, dst_depth, width);
+        } else if (dst_depth == 16) {
+            rgba16_to_planar_gbrapf16(c, src, srcStride,
+                                      dst, dstStride, srcSliceH, src_alpha, swap,
+                                      src_depth, dst_depth, width);
+        } else {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   srcFormat->name, dstFormat->name);
+        }
+    } else {
+        rgba16_to_planar_gbrap16(c, src, srcStride,
+                                 dst, dstStride, srcSliceH, src_alpha, swap,
+                                 src_depth, dst_depth, width);
     }
 }
 
-static int Rgb16ToPlanarRgb16Wrapper(SwsContext *c, const uint8_t *src[],
+static int RgbXXToPlanarRgbXXWrapper(SwsContext *c, const uint8_t *src[],
                                      int srcStride[], int srcSliceY, int srcSliceH,
                                      uint8_t *dst[], int dstStride[])
 {
-    uint16_t *dst2013[] = { (uint16_t *)dst[2], (uint16_t *)dst[0], (uint16_t *)dst[1], (uint16_t *)dst[3] };
-    uint16_t *dst1023[] = { (uint16_t *)dst[1], (uint16_t *)dst[0], (uint16_t *)dst[2], (uint16_t *)dst[3] };
+    uint8_t *dst2013[] = { dst[2], dst[0], dst[1], dst[3] };
+    uint8_t *dst1023[] = { dst[1], dst[0], dst[2], dst[3] };
     int stride2013[] = { dstStride[2], dstStride[0], dstStride[1], dstStride[3] };
     int stride1023[] = { dstStride[1], dstStride[0], dstStride[2], dstStride[3] };
     const AVPixFmtDescriptor *src_format = av_pix_fmt_desc_get(c->srcFormat);
@@ -729,8 +722,8 @@ static int Rgb16ToPlanarRgb16Wrapper(SwsContext *c, const uint8_t *src[],
     }
 
     for(i=0; i<4; i++) {
-        dst2013[i] += stride2013[i] * srcSliceY / 2;
-        dst1023[i] += stride1023[i] * srcSliceY / 2;
+        dst2013[i] += stride2013[i] * srcSliceY;
+        dst1023[i] += stride1023[i] * srcSliceY;
     }
 
     switch (c->srcFormat) {
@@ -738,17 +731,25 @@ static int Rgb16ToPlanarRgb16Wrapper(SwsContext *c, const uint8_t *src[],
     case AV_PIX_FMT_RGB48BE:
     case AV_PIX_FMT_RGBA64LE:
     case AV_PIX_FMT_RGBA64BE:
-        packed16togbra16(src[0], srcStride[0],
-                         dst2013, stride2013, srcSliceH, alpha, swap,
-                         16 - bpc, c->srcW);
+    case AV_PIX_FMT_RGBF16LE:
+    case AV_PIX_FMT_RGBF16BE:
+    case AV_PIX_FMT_RGBAF16LE:
+    case AV_PIX_FMT_RGBAF16BE:
+    case AV_PIX_FMT_RGBF32LE:
+    case AV_PIX_FMT_RGBF32BE:
+    case AV_PIX_FMT_RGBAF32LE:
+    case AV_PIX_FMT_RGBAF32BE:
+        RgbaXXtoPlanargbrapXX(c, src[0], srcStride[0],
+                              dst2013, stride2013, srcSliceH, alpha, swap,
+                              src_format, dst_format, c->srcW);
         break;
     case AV_PIX_FMT_BGR48LE:
     case AV_PIX_FMT_BGR48BE:
     case AV_PIX_FMT_BGRA64LE:
     case AV_PIX_FMT_BGRA64BE:
-        packed16togbra16(src[0], srcStride[0],
-                         dst1023, stride1023, srcSliceH, alpha, swap,
-                         16 - bpc, c->srcW);
+        RgbaXXtoPlanargbrapXX(c, src[0], srcStride[0],
+                              dst1023, stride1023, srcSliceH, alpha, swap,
+                              src_format, dst_format, c->srcW);
         break;
     default:
         av_log(c, AV_LOG_ERROR,
@@ -759,131 +760,79 @@ static int Rgb16ToPlanarRgb16Wrapper(SwsContext *c, const uint8_t *src[],
     return srcSliceH;
 }
 
-static void gbr16ptopacked16(const uint16_t *src[], int srcStride[],
-                             uint8_t *dst, int dstStride, int srcSliceH,
-                             int alpha, int swap, int bpp, int width)
+static void gbrapXXtoPackedRgbaXX(SwsContext *c, const uint8_t *src[], int srcStride[],
+                                  uint8_t *dst, int dstStride, int srcSliceH,
+                                  int alpha, int swap,
+                                  const AVPixFmtDescriptor *srcFormat,
+                                  const AVPixFmtDescriptor *dstFormat,
+                                  int width)
 {
-    int x, h, i;
-    int src_alpha = src[3] != NULL;
-    int scale_high = 16 - bpp, scale_low = (bpp - 8) * 2;
-    for (h = 0; h < srcSliceH; h++) {
-        uint16_t *dest = (uint16_t *)(dst + dstStride * h);
-        uint16_t component;
+    int src_float = srcFormat->flags & AV_PIX_FMT_FLAG_FLOAT;
+    int dst_float = dstFormat->flags & AV_PIX_FMT_FLAG_FLOAT;
+    int src_depth = srcFormat->comp[0].depth;
+    int dst_depth = dstFormat->comp[0].depth;
 
-        switch(swap) {
-        case 3:
-            if (alpha && !src_alpha) {
-                for (x = 0; x < width; x++) {
-                    component = av_bswap16(src[0][x]);
-                    *dest++ = av_bswap16(component << scale_high | component >> scale_low);
-                    component = av_bswap16(src[1][x]);
-                    *dest++ = av_bswap16(component << scale_high | component >> scale_low);
-                    component = av_bswap16(src[2][x]);
-                    *dest++ = av_bswap16(component << scale_high | component >> scale_low);
-                    *dest++ = 0xffff;
-                }
-            } else if (alpha && src_alpha) {
-                for (x = 0; x < width; x++) {
-                    component = av_bswap16(src[0][x]);
-                    *dest++ = av_bswap16(component << scale_high | component >> scale_low);
-                    component = av_bswap16(src[1][x]);
-                    *dest++ = av_bswap16(component << scale_high | component >> scale_low);
-                    component = av_bswap16(src[2][x]);
-                    *dest++ = av_bswap16(component << scale_high | component >> scale_low);
-                    component = av_bswap16(src[3][x]);
-                    *dest++ = av_bswap16(component << scale_high | component >> scale_low);
-                }
-            } else {
-                for (x = 0; x < width; x++) {
-                    component = av_bswap16(src[0][x]);
-                    *dest++ = av_bswap16(component << scale_high | component >> scale_low);
-                    component = av_bswap16(src[1][x]);
-                    *dest++ = av_bswap16(component << scale_high | component >> scale_low);
-                    component = av_bswap16(src[2][x]);
-                    *dest++ = av_bswap16(component << scale_high | component >> scale_low);
-                }
-            }
-            break;
-        case 2:
-            if (alpha && !src_alpha) {
-                for (x = 0; x < width; x++) {
-                    *dest++ = av_bswap16(src[0][x] << scale_high | src[0][x] >> scale_low);
-                    *dest++ = av_bswap16(src[1][x] << scale_high | src[1][x] >> scale_low);
-                    *dest++ = av_bswap16(src[2][x] << scale_high | src[2][x] >> scale_low);
-                    *dest++ = 0xffff;
-                }
-            } else if (alpha && src_alpha) {
-                for (x = 0; x < width; x++) {
-                    *dest++ = av_bswap16(src[0][x] << scale_high | src[0][x] >> scale_low);
-                    *dest++ = av_bswap16(src[1][x] << scale_high | src[1][x] >> scale_low);
-                    *dest++ = av_bswap16(src[2][x] << scale_high | src[2][x] >> scale_low);
-                    *dest++ = av_bswap16(src[3][x] << scale_high | src[3][x] >> scale_low);
-                }
-            } else {
-                for (x = 0; x < width; x++) {
-                    *dest++ = av_bswap16(src[0][x] << scale_high | src[0][x] >> scale_low);
-                    *dest++ = av_bswap16(src[1][x] << scale_high | src[1][x] >> scale_low);
-                    *dest++ = av_bswap16(src[2][x] << scale_high | src[2][x] >> scale_low);
-                }
-            }
-            break;
-        case 1:
-            if (alpha && !src_alpha) {
-                for (x = 0; x < width; x++) {
-                    *dest++ = av_bswap16(src[0][x]) << scale_high | av_bswap16(src[0][x]) >> scale_low;
-                    *dest++ = av_bswap16(src[1][x]) << scale_high | av_bswap16(src[1][x]) >> scale_low;
-                    *dest++ = av_bswap16(src[2][x]) << scale_high | av_bswap16(src[2][x]) >> scale_low;
-                    *dest++ = 0xffff;
-                }
-            } else if (alpha && src_alpha) {
-                for (x = 0; x < width; x++) {
-                    *dest++ = av_bswap16(src[0][x]) << scale_high | av_bswap16(src[0][x]) >> scale_low;
-                    *dest++ = av_bswap16(src[1][x]) << scale_high | av_bswap16(src[1][x]) >> scale_low;
-                    *dest++ = av_bswap16(src[2][x]) << scale_high | av_bswap16(src[2][x]) >> scale_low;
-                    *dest++ = av_bswap16(src[3][x]) << scale_high | av_bswap16(src[3][x]) >> scale_low;
-                }
-            } else {
-                for (x = 0; x < width; x++) {
-                    *dest++ = av_bswap16(src[0][x]) << scale_high | av_bswap16(src[0][x]) >> scale_low;
-                    *dest++ = av_bswap16(src[1][x]) << scale_high | av_bswap16(src[1][x]) >> scale_low;
-                    *dest++ = av_bswap16(src[2][x]) << scale_high | av_bswap16(src[2][x]) >> scale_low;
-                }
-            }
-            break;
-        default:
-            if (alpha && !src_alpha) {
-                for (x = 0; x < width; x++) {
-                    *dest++ = src[0][x] << scale_high | src[0][x] >> scale_low;
-                    *dest++ = src[1][x] << scale_high | src[1][x] >> scale_low;
-                    *dest++ = src[2][x] << scale_high | src[2][x] >> scale_low;
-                    *dest++ = 0xffff;
-                }
-            } else if (alpha && src_alpha) {
-                for (x = 0; x < width; x++) {
-                    *dest++ = src[0][x] << scale_high | src[0][x] >> scale_low;
-                    *dest++ = src[1][x] << scale_high | src[1][x] >> scale_low;
-                    *dest++ = src[2][x] << scale_high | src[2][x] >> scale_low;
-                    *dest++ = src[3][x] << scale_high | src[3][x] >> scale_low;
-                }
-            } else {
-                for (x = 0; x < width; x++) {
-                    *dest++ = src[0][x] << scale_high | src[0][x] >> scale_low;
-                    *dest++ = src[1][x] << scale_high | src[1][x] >> scale_low;
-                    *dest++ = src[2][x] << scale_high | src[2][x] >> scale_low;
-                }
-            }
+    if (src_float && dst_float) {
+        if (src_depth == 32 && dst_depth == 32) {
+            gbrapf32_to_packed_rgbaf32(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, alpha, swap,
+                                       src_depth, dst_depth, width);
+        } else if (src_depth == 16 && dst_depth == 32) {
+            gbrapf16_to_packed_rgbaf32(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, alpha, swap,
+                                       src_depth, dst_depth, width);
+        } else if (src_depth == 32 && dst_depth == 16) {
+            gbrapf32_to_packed_rgbaf16(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, alpha, swap,
+                                       src_depth, dst_depth, width);
+        } else if (src_depth == 16 && dst_depth == 16) {
+            gbrapf16_to_packed_rgbaf16(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, alpha, swap,
+                                       src_depth, dst_depth, width);
+        } else {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   srcFormat->name, dstFormat->name);
         }
-        for (i = 0; i < 3 + src_alpha; i++)
-            src[i] += srcStride[i] >> 1;
+    } else if (src_float && !dst_float) {
+        if (src_depth == 32) {
+            gbrapf32_to_packed_rgba16(c, src, srcStride,
+                                      dst, dstStride, srcSliceH, alpha, swap,
+                                      src_depth, dst_depth, width);
+        } else if (src_depth  == 16) {
+            gbrapf16_to_packed_rgba16(c, src, srcStride,
+                                      dst, dstStride, srcSliceH, alpha, swap,
+                                      src_depth, dst_depth, width);
+        } else  {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   srcFormat->name, dstFormat->name);
+        }
+
+    } else if (!src_float && dst_float) {
+        if (dst_depth == 32) {
+            gbrap16_to_packed_rgbaf32(c, src, srcStride,
+                                      dst, dstStride, srcSliceH, alpha, swap,
+                                      src_depth, dst_depth, width);
+        } else if (dst_depth == 16) {
+            gbrap16_to_packed_rgbaf16(c, src, srcStride,
+                                      dst, dstStride, srcSliceH, alpha, swap,
+                                      src_depth, dst_depth, width);
+        } else {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   srcFormat->name, dstFormat->name);
+        }
+    } else {
+        gbrap16_to_packed_rgba16(c, src, srcStride,
+                                 dst, dstStride, srcSliceH, alpha, swap,
+                                 src_depth, dst_depth, width);
     }
 }
 
-static int planarRgb16ToRgb16Wrapper(SwsContext *c, const uint8_t *src[],
+static int planarRgbXXToRgbXXWrapper(SwsContext *c, const uint8_t *src[],
                                      int srcStride[], int srcSliceY, int srcSliceH,
                                      uint8_t *dst[], int dstStride[])
 {
-    const uint16_t *src102[] = { (uint16_t *)src[1], (uint16_t *)src[0], (uint16_t *)src[2], (uint16_t *)src[3] };
-    const uint16_t *src201[] = { (uint16_t *)src[2], (uint16_t *)src[0], (uint16_t *)src[1], (uint16_t *)src[3] };
+    const uint8_t *src102[] = { src[1], src[0], src[2], src[3] };
+    const uint8_t *src201[] = { src[2], src[0], src[1], src[3] };
     int stride102[] = { srcStride[1], srcStride[0], srcStride[2], srcStride[3] };
     int stride201[] = { srcStride[2], srcStride[0], srcStride[1], srcStride[3] };
     const AVPixFmtDescriptor *src_format = av_pix_fmt_desc_get(c->srcFormat);
@@ -907,32 +856,290 @@ static int planarRgb16ToRgb16Wrapper(SwsContext *c, const uint8_t *src[],
     switch (c->dstFormat) {
     case AV_PIX_FMT_BGR48LE:
     case AV_PIX_FMT_BGR48BE:
-        gbr16ptopacked16(src102, stride102,
-                         dst[0] + srcSliceY * dstStride[0], dstStride[0],
-                         srcSliceH, 0, swap, bits_per_sample, c->srcW);
+        gbrapXXtoPackedRgbaXX(c, src102, stride102,
+                              dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                              srcSliceH, 0, swap, src_format, dst_format, c->srcW);
         break;
     case AV_PIX_FMT_RGB48LE:
     case AV_PIX_FMT_RGB48BE:
-        gbr16ptopacked16(src201, stride201,
-                         dst[0] + srcSliceY * dstStride[0], dstStride[0],
-                         srcSliceH, 0, swap, bits_per_sample, c->srcW);
+    case AV_PIX_FMT_RGBF16LE:
+    case AV_PIX_FMT_RGBF16BE:
+    case AV_PIX_FMT_RGBF32LE:
+    case AV_PIX_FMT_RGBF32BE:
+        gbrapXXtoPackedRgbaXX(c, src201, stride201,
+                              dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                              srcSliceH, 0, swap, src_format, dst_format, c->srcW);
         break;
     case AV_PIX_FMT_RGBA64LE:
     case AV_PIX_FMT_RGBA64BE:
-         gbr16ptopacked16(src201, stride201,
-                          dst[0] + srcSliceY * dstStride[0], dstStride[0],
-                          srcSliceH, 1, swap, bits_per_sample, c->srcW);
+    case AV_PIX_FMT_RGBAF16LE:
+    case AV_PIX_FMT_RGBAF16BE:
+    case AV_PIX_FMT_RGBAF32LE:
+    case AV_PIX_FMT_RGBAF32BE:
+        gbrapXXtoPackedRgbaXX(c, src201, stride201,
+                              dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                              srcSliceH, 1, swap, src_format, dst_format, c->srcW);
         break;
     case AV_PIX_FMT_BGRA64LE:
     case AV_PIX_FMT_BGRA64BE:
-        gbr16ptopacked16(src102, stride102,
-                         dst[0] + srcSliceY * dstStride[0], dstStride[0],
-                         srcSliceH, 1, swap, bits_per_sample, c->srcW);
+        gbrapXXtoPackedRgbaXX(c, src102, stride102,
+                              dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                              srcSliceH, 1, swap, src_format, dst_format, c->srcW);
         break;
     default:
         av_log(c, AV_LOG_ERROR,
                "unsupported planar RGB conversion %s -> %s\n",
                src_format->name, dst_format->name);
+    }
+
+    return srcSliceH;
+}
+
+static int planarRgbXXToPlanarRgbXXWrapper(SwsContext *c, const uint8_t *src[],
+                                           int srcStride[], int srcSliceY, int srcSliceH,
+                                           uint8_t *dst[], int dstStride[])
+{
+    const AVPixFmtDescriptor *src_format = av_pix_fmt_desc_get(c->srcFormat);
+    const AVPixFmtDescriptor *dst_format = av_pix_fmt_desc_get(c->dstFormat);
+    int src_depth = src_format->comp[0].depth;
+    int dst_depth = dst_format->comp[0].depth;
+    int src_float = src_format->flags & AV_PIX_FMT_FLAG_FLOAT;
+    int dst_float = dst_format->flags & AV_PIX_FMT_FLAG_FLOAT;
+    int swap = 0;
+    if ( HAVE_BIGENDIAN && !(src_format->flags & AV_PIX_FMT_FLAG_BE) ||
+        !HAVE_BIGENDIAN &&   src_format->flags & AV_PIX_FMT_FLAG_BE)
+        swap++;
+    if ( HAVE_BIGENDIAN && !(dst_format->flags & AV_PIX_FMT_FLAG_BE) ||
+        !HAVE_BIGENDIAN &&   dst_format->flags & AV_PIX_FMT_FLAG_BE)
+        swap += 2;
+
+    if (src_depth <= 8 || dst_depth <= 8) {
+        av_log(c, AV_LOG_ERROR,
+               "unsupported planar RGB conversion %s -> %s\n",
+               src_format->name, dst_format->name);
+    }
+
+    // only planar and gray formats supported
+    if (((src_format->flags & (AV_PIX_FMT_FLAG_PLANAR | AV_PIX_FMT_FLAG_RGB)) !=
+         (AV_PIX_FMT_FLAG_PLANAR | AV_PIX_FMT_FLAG_RGB) ||
+         (dst_format->flags & (AV_PIX_FMT_FLAG_PLANAR | AV_PIX_FMT_FLAG_RGB)) !=
+         (AV_PIX_FMT_FLAG_PLANAR | AV_PIX_FMT_FLAG_RGB)) &&
+        (src_format->nb_components != 1 || dst_format->nb_components != 1)) {
+        av_log(c, AV_LOG_ERROR,
+               "unsupported planar RGB conversion %s -> %s\n",
+               src_format->name, dst_format->name);
+    }
+
+    for(int i = 0; i < 4; i++) {
+        dst[i] += dstStride[i] * srcSliceY;
+    }
+
+    if (src_float && dst_float) {
+        if (src_depth == 32 && dst_depth == 32) {
+            gbrapf32_to_planar_gbrapf32(c, src, srcStride,
+                                        dst, dstStride, srcSliceH, swap,
+                                        src_depth, dst_depth, c->srcW);
+        } else if (src_depth == 16 && dst_depth == 32) {
+            gbrapf16_to_planar_gbrapf32(c, src, srcStride,
+                                        dst, dstStride, srcSliceH, swap,
+                                        src_depth, dst_depth, c->srcW);
+        } else if (src_depth == 32 && dst_depth == 16) {
+            gbrapf32_to_planar_gbrapf16(c, src, srcStride,
+                                        dst, dstStride, srcSliceH, swap,
+                                        src_depth, dst_depth, c->srcW);
+        } else if (src_depth == 16 && dst_depth == 16) {
+            gbrapf16_to_planar_gbrapf16(c, src, srcStride,
+                                        dst, dstStride, srcSliceH, swap,
+                                        src_depth, dst_depth, c->srcW);
+        } else {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   src_format->name, dst_format->name);
+        }
+    } else if (src_float && !dst_float) {
+        if (src_depth == 32) {
+            gbrapf32_to_planar_gbrap16(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, swap,
+                                       src_depth, dst_depth, c->srcW);
+        } else if (src_depth  == 16) {
+            gbrapf16_to_planar_gbrap16(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, swap,
+                                       src_depth, dst_depth, c->srcW);
+        } else  {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   src_format->name, dst_format->name);
+        }
+
+    } else if (!src_float && dst_float) {
+        if (dst_depth == 32) {
+            gbrap16_to_planar_gbrapf32(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, swap,
+                                       src_depth, dst_depth, c->srcW);
+        } else if (dst_depth == 16) {
+            gbrap16_to_planar_gbrapf16(c, src, srcStride,
+                                       dst, dstStride, srcSliceH, swap,
+                                       src_depth, dst_depth, c->srcW);
+        } else {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   src_format->name, dst_format->name);
+        }
+    } else {
+        gbrap16_to_planar_gbrap16(c, src, srcStride,
+                                  dst, dstStride, srcSliceH, swap,
+                                  src_depth, dst_depth, c->srcW);
+    }
+
+    return srcSliceH;
+}
+
+static int RgbXXToRgbXXWrapper(SwsContext *c, const uint8_t *src[],
+                               int srcStride[], int srcSliceY, int srcSliceH,
+                               uint8_t *dst[], int dstStride[])
+{
+    const AVPixFmtDescriptor *src_format = av_pix_fmt_desc_get(c->srcFormat);
+    const AVPixFmtDescriptor *dst_format = av_pix_fmt_desc_get(c->dstFormat);
+    int src_depth = src_format->comp[0].depth;
+    int dst_depth = dst_format->comp[0].depth;
+    int src_alpha = src_format->flags & AV_PIX_FMT_FLAG_ALPHA;
+    int dst_alpha = dst_format->flags & AV_PIX_FMT_FLAG_ALPHA;
+    int src_float = src_format->flags & AV_PIX_FMT_FLAG_FLOAT;
+    int dst_float = dst_format->flags & AV_PIX_FMT_FLAG_FLOAT;
+
+    int swap = 0;
+    int src_order = 0;
+    int order = 0;
+
+    if ( HAVE_BIGENDIAN && !(src_format->flags & AV_PIX_FMT_FLAG_BE) ||
+        !HAVE_BIGENDIAN &&   src_format->flags & AV_PIX_FMT_FLAG_BE)
+        swap++;
+    if ( HAVE_BIGENDIAN && !(dst_format->flags & AV_PIX_FMT_FLAG_BE) ||
+        !HAVE_BIGENDIAN &&   dst_format->flags & AV_PIX_FMT_FLAG_BE)
+        swap += 2;
+
+    if (src_format->flags & AV_PIX_FMT_FLAG_PLANAR || dst_format->flags & AV_PIX_FMT_FLAG_PLANAR ||
+        !(src_format->flags & AV_PIX_FMT_FLAG_RGB) || !(dst_format->flags & AV_PIX_FMT_FLAG_RGB) ||
+        src_depth <= 8 || dst_depth <= 8) {
+        av_log(c, AV_LOG_ERROR, "unsupported planar RGB conversion %s -> %s\n",
+               src_format->name, dst_format->name);
+        return srcSliceH;
+    }
+
+    switch (c->srcFormat) {
+    case AV_PIX_FMT_RGB48LE:
+    case AV_PIX_FMT_RGB48BE:
+    case AV_PIX_FMT_RGBF16LE:
+    case AV_PIX_FMT_RGBF16BE:
+    case AV_PIX_FMT_RGBF32LE:
+    case AV_PIX_FMT_RGBF32BE:
+    case AV_PIX_FMT_RGBA64LE:
+    case AV_PIX_FMT_RGBA64BE:
+    case AV_PIX_FMT_RGBAF16LE:
+    case AV_PIX_FMT_RGBAF16BE:
+    case AV_PIX_FMT_RGBAF32LE:
+    case AV_PIX_FMT_RGBAF32BE:
+        src_order = 0;
+        break;
+    case AV_PIX_FMT_BGR48LE:
+    case AV_PIX_FMT_BGR48BE:
+    case AV_PIX_FMT_BGRA64LE:
+    case AV_PIX_FMT_BGRA64BE:
+        src_order = 1;
+        break;
+    default:
+        av_log(c, AV_LOG_ERROR,
+               "unsupported planar RGB conversion %s -> %s\n",
+               src_format->name, dst_format->name);
+        return srcSliceH;
+    }
+
+    switch (c->dstFormat) {
+    case AV_PIX_FMT_RGB48LE:
+    case AV_PIX_FMT_RGB48BE:
+    case AV_PIX_FMT_RGBF16LE:
+    case AV_PIX_FMT_RGBF16BE:
+    case AV_PIX_FMT_RGBF32LE:
+    case AV_PIX_FMT_RGBF32BE:
+    case AV_PIX_FMT_RGBA64LE:
+    case AV_PIX_FMT_RGBA64BE:
+    case AV_PIX_FMT_RGBAF16LE:
+    case AV_PIX_FMT_RGBAF16BE:
+    case AV_PIX_FMT_RGBAF32LE:
+    case AV_PIX_FMT_RGBAF32BE:
+        order = src_order == 0 ? 0: 1;
+        break;
+    case AV_PIX_FMT_BGR48LE:
+    case AV_PIX_FMT_BGR48BE:
+    case AV_PIX_FMT_BGRA64LE:
+    case AV_PIX_FMT_BGRA64BE:
+        order = src_order == 1 ? 0: 1;
+        break;
+    default:
+        av_log(c, AV_LOG_ERROR,
+               "unsupported planar RGB conversion %s -> %s\n",
+               src_format->name, dst_format->name);
+        return srcSliceH;
+    }
+
+    if (src_float && dst_float) {
+        if (src_depth == 32 && dst_depth == 32) {
+            rgbaf32_to_packed_rgbaf32(c, src[0], srcStride[0],
+                                      dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                                      srcSliceH, src_alpha, dst_alpha, swap, order,
+                                      src_depth, dst_depth, c->srcW);
+        } else if (src_depth == 16 && dst_depth == 32) {
+            rgbaf16_to_packed_rgbaf32(c, src[0], srcStride[0],
+                                      dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                                      srcSliceH, src_alpha, dst_alpha, swap, order,
+                                      src_depth, dst_depth, c->srcW);
+        } else if (src_depth == 32 && dst_depth == 16) {
+            rgbaf32_to_packed_rgbaf16(c, src[0], srcStride[0],
+                                      dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                                      srcSliceH, src_alpha, dst_alpha, swap, order,
+                                      src_depth, dst_depth, c->srcW);
+        } else if (src_depth == 16 && dst_depth == 16) {
+            rgbaf16_to_packed_rgbaf16(c, src[0], srcStride[0],
+                                      dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                                      srcSliceH, src_alpha, dst_alpha, swap, order,
+                                      src_depth, dst_depth, c->srcW);
+        } else {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   src_format->name, dst_format->name);
+        }
+    } else if (src_float && !dst_float) {
+        if (src_depth == 32) {
+            rgbaf32_to_packed_rgba16(c, src[0], srcStride[0],
+                                     dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                                     srcSliceH, src_alpha, dst_alpha, swap, order,
+                                     src_depth, dst_depth, c->srcW);
+        } else if (src_depth  == 16) {
+            rgbaf16_to_packed_rgba16(c, src[0], srcStride[0],
+                                     dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                                     srcSliceH, src_alpha, dst_alpha, swap, order,
+                                     src_depth, dst_depth, c->srcW);
+        } else  {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   src_format->name, dst_format->name);
+        }
+
+    } else if (!src_float && dst_float) {
+        if (dst_depth == 32) {
+            rgba16_to_packed_rgbaf32(c, src[0], srcStride[0],
+                                     dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                                     srcSliceH, src_alpha, dst_alpha, swap, order,
+                                     src_depth, dst_depth, c->srcW);
+        } else if (dst_depth == 16) {
+            rgba16_to_packed_rgbaf16(c, src[0], srcStride[0],
+                                     dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                                     srcSliceH, src_alpha, dst_alpha, swap, order,
+                                     src_depth, dst_depth, c->srcW);
+        } else {
+            av_log(c, AV_LOG_ERROR, "unsupported conversion to planar RGB %s -> %s\n",
+                   src_format->name, dst_format->name);
+        }
+    } else {
+        rgba16_to_packed_rgba16(c, src[0], srcStride[0],
+                                dst[0] + srcSliceY * dstStride[0], dstStride[0],
+                                srcSliceH, src_alpha, dst_alpha, swap, order,
+                                src_depth, dst_depth, c->srcW);
     }
 
     return srcSliceH;
@@ -2067,7 +2274,11 @@ void ff_get_unscaled_swscale(SwsContext *c)
     if ((srcFormat == AV_PIX_FMT_RGB48LE  || srcFormat == AV_PIX_FMT_RGB48BE  ||
          srcFormat == AV_PIX_FMT_BGR48LE  || srcFormat == AV_PIX_FMT_BGR48BE  ||
          srcFormat == AV_PIX_FMT_RGBA64LE || srcFormat == AV_PIX_FMT_RGBA64BE ||
-         srcFormat == AV_PIX_FMT_BGRA64LE || srcFormat == AV_PIX_FMT_BGRA64BE) &&
+         srcFormat == AV_PIX_FMT_BGRA64LE || srcFormat == AV_PIX_FMT_BGRA64BE ||
+         srcFormat == AV_PIX_FMT_RGBF16LE  || srcFormat == AV_PIX_FMT_RGBF16BE ||
+         srcFormat == AV_PIX_FMT_RGBAF16LE || srcFormat == AV_PIX_FMT_RGBAF16BE ||
+         srcFormat == AV_PIX_FMT_RGBF32LE  || srcFormat == AV_PIX_FMT_RGBF32BE ||
+         srcFormat == AV_PIX_FMT_RGBAF32LE || srcFormat == AV_PIX_FMT_RGBAF32BE) &&
         (dstFormat == AV_PIX_FMT_GBRP9LE  || dstFormat == AV_PIX_FMT_GBRP9BE  ||
          dstFormat == AV_PIX_FMT_GBRP10LE || dstFormat == AV_PIX_FMT_GBRP10BE ||
          dstFormat == AV_PIX_FMT_GBRP12LE || dstFormat == AV_PIX_FMT_GBRP12BE ||
@@ -2075,8 +2286,12 @@ void ff_get_unscaled_swscale(SwsContext *c)
          dstFormat == AV_PIX_FMT_GBRP16LE || dstFormat == AV_PIX_FMT_GBRP16BE ||
          dstFormat == AV_PIX_FMT_GBRAP10LE || dstFormat == AV_PIX_FMT_GBRAP10BE ||
          dstFormat == AV_PIX_FMT_GBRAP12LE || dstFormat == AV_PIX_FMT_GBRAP12BE ||
-         dstFormat == AV_PIX_FMT_GBRAP16LE || dstFormat == AV_PIX_FMT_GBRAP16BE ))
-        c->convert_unscaled = Rgb16ToPlanarRgb16Wrapper;
+         dstFormat == AV_PIX_FMT_GBRAP16LE || dstFormat == AV_PIX_FMT_GBRAP16BE ||
+         dstFormat == AV_PIX_FMT_GBRPF16LE  || dstFormat == AV_PIX_FMT_GBRPF16BE ||
+         dstFormat == AV_PIX_FMT_GBRAPF16LE || dstFormat == AV_PIX_FMT_GBRAPF16BE ||
+         dstFormat == AV_PIX_FMT_GBRPF32LE  || dstFormat == AV_PIX_FMT_GBRPF32BE ||
+         dstFormat == AV_PIX_FMT_GBRAPF32LE || dstFormat == AV_PIX_FMT_GBRAPF32BE ))
+        c->convert_unscaled = RgbXXToPlanarRgbXXWrapper;
 
     if ((srcFormat == AV_PIX_FMT_GBRP9LE  || srcFormat == AV_PIX_FMT_GBRP9BE  ||
          srcFormat == AV_PIX_FMT_GBRP16LE || srcFormat == AV_PIX_FMT_GBRP16BE ||
@@ -2085,12 +2300,82 @@ void ff_get_unscaled_swscale(SwsContext *c)
          srcFormat == AV_PIX_FMT_GBRP14LE || srcFormat == AV_PIX_FMT_GBRP14BE ||
          srcFormat == AV_PIX_FMT_GBRAP10LE || srcFormat == AV_PIX_FMT_GBRAP10BE ||
          srcFormat == AV_PIX_FMT_GBRAP12LE || srcFormat == AV_PIX_FMT_GBRAP12BE ||
-         srcFormat == AV_PIX_FMT_GBRAP16LE || srcFormat == AV_PIX_FMT_GBRAP16BE) &&
+         srcFormat == AV_PIX_FMT_GBRAP16LE || srcFormat == AV_PIX_FMT_GBRAP16BE ||
+         srcFormat == AV_PIX_FMT_GBRPF16LE  || srcFormat == AV_PIX_FMT_GBRPF16BE ||
+         srcFormat == AV_PIX_FMT_GBRAPF16LE || srcFormat == AV_PIX_FMT_GBRAPF16BE ||
+         srcFormat == AV_PIX_FMT_GBRPF32LE  || srcFormat == AV_PIX_FMT_GBRPF32BE ||
+         srcFormat == AV_PIX_FMT_GBRAPF32LE || srcFormat == AV_PIX_FMT_GBRAPF32BE) &&
         (dstFormat == AV_PIX_FMT_RGB48LE  || dstFormat == AV_PIX_FMT_RGB48BE  ||
          dstFormat == AV_PIX_FMT_BGR48LE  || dstFormat == AV_PIX_FMT_BGR48BE  ||
          dstFormat == AV_PIX_FMT_RGBA64LE || dstFormat == AV_PIX_FMT_RGBA64BE ||
-         dstFormat == AV_PIX_FMT_BGRA64LE || dstFormat == AV_PIX_FMT_BGRA64BE))
-        c->convert_unscaled = planarRgb16ToRgb16Wrapper;
+         dstFormat == AV_PIX_FMT_BGRA64LE || dstFormat == AV_PIX_FMT_BGRA64BE ||
+         dstFormat == AV_PIX_FMT_RGBF16LE  || dstFormat == AV_PIX_FMT_RGBF16BE ||
+         dstFormat == AV_PIX_FMT_RGBAF16LE || dstFormat == AV_PIX_FMT_RGBAF16BE ||
+         dstFormat == AV_PIX_FMT_RGBF32LE  || dstFormat == AV_PIX_FMT_RGBF32BE ||
+         dstFormat == AV_PIX_FMT_RGBAF32LE || dstFormat == AV_PIX_FMT_RGBAF32BE))
+        c->convert_unscaled = planarRgbXXToRgbXXWrapper;
+
+    if ((srcFormat == AV_PIX_FMT_GBRP9LE  || srcFormat == AV_PIX_FMT_GBRP9BE  ||
+         srcFormat == AV_PIX_FMT_GBRP16LE || srcFormat == AV_PIX_FMT_GBRP16BE ||
+         srcFormat == AV_PIX_FMT_GBRP10LE || srcFormat == AV_PIX_FMT_GBRP10BE ||
+         srcFormat == AV_PIX_FMT_GBRP12LE || srcFormat == AV_PIX_FMT_GBRP12BE ||
+         srcFormat == AV_PIX_FMT_GBRP14LE || srcFormat == AV_PIX_FMT_GBRP14BE ||
+         srcFormat == AV_PIX_FMT_GBRAP10LE || srcFormat == AV_PIX_FMT_GBRAP10BE ||
+         srcFormat == AV_PIX_FMT_GBRAP12LE || srcFormat == AV_PIX_FMT_GBRAP12BE ||
+         srcFormat == AV_PIX_FMT_GBRAP16LE || srcFormat == AV_PIX_FMT_GBRAP16BE ||
+         srcFormat == AV_PIX_FMT_GBRPF16LE  || srcFormat == AV_PIX_FMT_GBRPF16BE ||
+         srcFormat == AV_PIX_FMT_GBRAPF16LE || srcFormat == AV_PIX_FMT_GBRAPF16BE ||
+         srcFormat == AV_PIX_FMT_GBRPF32LE  || srcFormat == AV_PIX_FMT_GBRPF32BE ||
+         srcFormat == AV_PIX_FMT_GBRAPF32LE || srcFormat == AV_PIX_FMT_GBRAPF32BE) &&
+        (dstFormat == AV_PIX_FMT_GBRP9LE  || dstFormat == AV_PIX_FMT_GBRP9BE  ||
+         dstFormat == AV_PIX_FMT_GBRP10LE || dstFormat == AV_PIX_FMT_GBRP10BE ||
+         dstFormat == AV_PIX_FMT_GBRP12LE || dstFormat == AV_PIX_FMT_GBRP12BE ||
+         dstFormat == AV_PIX_FMT_GBRP14LE || dstFormat == AV_PIX_FMT_GBRP14BE ||
+         dstFormat == AV_PIX_FMT_GBRP16LE || dstFormat == AV_PIX_FMT_GBRP16BE ||
+         dstFormat == AV_PIX_FMT_GBRAP10LE || dstFormat == AV_PIX_FMT_GBRAP10BE ||
+         dstFormat == AV_PIX_FMT_GBRAP12LE || dstFormat == AV_PIX_FMT_GBRAP12BE ||
+         dstFormat == AV_PIX_FMT_GBRAP16LE || dstFormat == AV_PIX_FMT_GBRAP16BE ||
+         dstFormat == AV_PIX_FMT_GBRPF16LE  || dstFormat == AV_PIX_FMT_GBRPF16BE ||
+         dstFormat == AV_PIX_FMT_GBRAPF16LE || dstFormat == AV_PIX_FMT_GBRAPF16BE ||
+         dstFormat == AV_PIX_FMT_GBRPF32LE  || dstFormat == AV_PIX_FMT_GBRPF32BE ||
+         dstFormat == AV_PIX_FMT_GBRAPF32LE || dstFormat == AV_PIX_FMT_GBRAPF32BE ))
+        c->convert_unscaled = planarRgbXXToPlanarRgbXXWrapper;
+
+
+    // planar to planar also works for gray format conversions
+    if ((srcFormat == AV_PIX_FMT_GRAY9LE   || srcFormat == AV_PIX_FMT_GRAY9BE ||
+         srcFormat == AV_PIX_FMT_GRAY10LE  || srcFormat == AV_PIX_FMT_GRAY10BE ||
+         srcFormat == AV_PIX_FMT_GRAY12LE  || srcFormat == AV_PIX_FMT_GRAY12BE ||
+         srcFormat == AV_PIX_FMT_GRAY14LE  || srcFormat == AV_PIX_FMT_GRAY14BE ||
+         srcFormat == AV_PIX_FMT_GRAY16LE  || srcFormat == AV_PIX_FMT_GRAY16BE ||
+         srcFormat == AV_PIX_FMT_GRAYF16LE || srcFormat == AV_PIX_FMT_GRAYF16BE ||
+         srcFormat == AV_PIX_FMT_GRAYF32LE || srcFormat == AV_PIX_FMT_GRAYF32BE ) &&
+        (dstFormat == AV_PIX_FMT_GRAY9LE   || dstFormat == AV_PIX_FMT_GRAY9BE ||
+         dstFormat == AV_PIX_FMT_GRAY10LE  || dstFormat == AV_PIX_FMT_GRAY10BE ||
+         dstFormat == AV_PIX_FMT_GRAY12LE  || dstFormat == AV_PIX_FMT_GRAY12BE ||
+         dstFormat == AV_PIX_FMT_GRAY14LE  || dstFormat == AV_PIX_FMT_GRAY14BE ||
+         dstFormat == AV_PIX_FMT_GRAY16LE  || dstFormat == AV_PIX_FMT_GRAY16BE ||
+         dstFormat == AV_PIX_FMT_GRAYF16LE || dstFormat == AV_PIX_FMT_GRAYF16BE ||
+         dstFormat == AV_PIX_FMT_GRAYF32LE || dstFormat == AV_PIX_FMT_GRAYF32BE))
+        c->convert_unscaled = planarRgbXXToPlanarRgbXXWrapper;
+
+    if ((srcFormat == AV_PIX_FMT_RGB48LE  || srcFormat == AV_PIX_FMT_RGB48BE  ||
+         srcFormat == AV_PIX_FMT_BGR48LE  || srcFormat == AV_PIX_FMT_BGR48BE  ||
+         srcFormat == AV_PIX_FMT_RGBA64LE || srcFormat == AV_PIX_FMT_RGBA64BE ||
+         srcFormat == AV_PIX_FMT_BGRA64LE || srcFormat == AV_PIX_FMT_BGRA64BE ||
+         srcFormat == AV_PIX_FMT_RGBF16LE  || srcFormat == AV_PIX_FMT_RGBF16BE ||
+         srcFormat == AV_PIX_FMT_RGBAF16LE || srcFormat == AV_PIX_FMT_RGBAF16BE ||
+         srcFormat == AV_PIX_FMT_RGBF32LE  || srcFormat == AV_PIX_FMT_RGBF32BE ||
+         srcFormat == AV_PIX_FMT_RGBAF32LE || srcFormat == AV_PIX_FMT_RGBAF32BE) &&
+        (dstFormat == AV_PIX_FMT_RGB48LE  || dstFormat == AV_PIX_FMT_RGB48BE  ||
+         dstFormat == AV_PIX_FMT_BGR48LE  || dstFormat == AV_PIX_FMT_BGR48BE  ||
+         dstFormat == AV_PIX_FMT_RGBA64LE || dstFormat == AV_PIX_FMT_RGBA64BE ||
+         dstFormat == AV_PIX_FMT_BGRA64LE || dstFormat == AV_PIX_FMT_BGRA64BE ||
+         dstFormat == AV_PIX_FMT_RGBF16LE  || dstFormat == AV_PIX_FMT_RGBF16BE ||
+         dstFormat == AV_PIX_FMT_RGBAF16LE || dstFormat == AV_PIX_FMT_RGBAF16BE ||
+         dstFormat == AV_PIX_FMT_RGBF32LE  || dstFormat == AV_PIX_FMT_RGBF32BE ||
+         dstFormat == AV_PIX_FMT_RGBAF32LE || dstFormat == AV_PIX_FMT_RGBAF32BE))
+        c->convert_unscaled = RgbXXToRgbXXWrapper;
 
     if (av_pix_fmt_desc_get(srcFormat)->comp[0].depth == 8 &&
         isPackedRGB(srcFormat) && dstFormat == AV_PIX_FMT_GBRP)

@@ -275,22 +275,6 @@ int ff_init_filters(SwsContext * c)
     c->descIndex[0] = num_ydesc + (need_gamma ? 1 : 0);
     c->descIndex[1] = num_ydesc + num_cdesc + (need_gamma ? 1 : 0);
 
-    if (isFloat16(c->srcFormat)) {
-        c->h2f_tables = av_malloc(sizeof(*c->h2f_tables));
-        if (!c->h2f_tables)
-            return AVERROR(ENOMEM);
-        ff_init_half2float_tables(c->h2f_tables);
-        c->input_opaque = c->h2f_tables;
-    }
-
-    if (isFloat16(c->dstFormat)) {
-        c->f2h_tables = av_malloc(sizeof(*c->f2h_tables));
-        if (!c->f2h_tables)
-            return AVERROR(ENOMEM);
-        ff_init_float2half_tables(c->f2h_tables);
-        c->output_opaque = c->f2h_tables;
-    }
-
     c->desc  = av_calloc(c->numDesc,  sizeof(*c->desc));
     if (!c->desc)
         return AVERROR(ENOMEM);
@@ -400,7 +384,5 @@ int ff_free_filters(SwsContext *c)
             free_slice(&c->slice[i]);
         av_freep(&c->slice);
     }
-    av_freep(&c->h2f_tables);
-    av_freep(&c->f2h_tables);
     return 0;
 }

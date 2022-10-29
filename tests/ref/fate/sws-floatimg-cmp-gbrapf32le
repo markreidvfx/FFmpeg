@@ -279,65 +279,65 @@ avg diff: 0.202417
 min diff: 0.000004
 max diff: 0.860978
 gbrapf32le -> rgb48be -> gbrapf32le
-avg diff: 0.000249
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> rgb48be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000249
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> bgr48be -> gbrapf32le
-avg diff: 0.000249
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> bgr48be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000249
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> rgb48le -> gbrapf32le
-avg diff: 0.000249
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> rgb48le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000249
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> bgr48le -> gbrapf32le
-avg diff: 0.000249
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> bgr48le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000249
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> rgba64be -> gbrapf32le
-avg diff: 0.000187
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> rgba64be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000187
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> bgra64be -> gbrapf32le
-avg diff: 0.000187
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> bgra64be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000187
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> rgba64le -> gbrapf32le
-avg diff: 0.000187
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> rgba64le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000187
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> bgra64le -> gbrapf32le
-avg diff: 0.000187
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> bgra64le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000187
 min diff: 0.000000
@@ -359,161 +359,161 @@ avg diff: 0.001002
 min diff: 0.000000
 max diff: 0.004229
 gbrapf32le -> gbrp9le -> gbrapf32le
-avg diff: 0.000545
+avg diff: 0.000490
 min diff: 0.000000
-max diff: 0.002245
+max diff: 0.000978
 gbrapf32le -> yuva444p16le -> gbrp9le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000545
 min diff: 0.000000
 max diff: 0.002245
 gbrapf32le -> gbrp10be -> gbrapf32le
-avg diff: 0.000350
+avg diff: 0.000244
 min diff: 0.000000
-max diff: 0.001475
+max diff: 0.000489
 gbrapf32le -> yuva444p16le -> gbrp10be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000350
 min diff: 0.000000
 max diff: 0.001475
 gbrapf32le -> gbrap10be -> gbrapf32le
-avg diff: 0.000631
+avg diff: 0.000244
 min diff: 0.000000
-max diff: 0.001961
+max diff: 0.000489
 gbrapf32le -> yuva444p16le -> gbrap10be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000631
 min diff: 0.000000
 max diff: 0.001961
 gbrapf32le -> gbrp10le -> gbrapf32le
-avg diff: 0.000350
+avg diff: 0.000244
 min diff: 0.000000
-max diff: 0.001475
+max diff: 0.000489
 gbrapf32le -> yuva444p16le -> gbrp10le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000350
 min diff: 0.000000
 max diff: 0.001475
 gbrapf32le -> gbrap10le -> gbrapf32le
-avg diff: 0.000631
+avg diff: 0.000244
 min diff: 0.000000
-max diff: 0.001961
+max diff: 0.000489
 gbrapf32le -> yuva444p16le -> gbrap10le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000631
 min diff: 0.000000
 max diff: 0.001961
 gbrapf32le -> gbrp12be -> gbrapf32le
-avg diff: 0.000260
+avg diff: 0.000061
 min diff: 0.000000
-max diff: 0.001135
+max diff: 0.000122
 gbrapf32le -> yuva444p16le -> gbrp12be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000260
 min diff: 0.000000
 max diff: 0.001135
 gbrapf32le -> gbrap12be -> gbrapf32le
-avg diff: 0.000654
+avg diff: 0.000061
 min diff: 0.000000
-max diff: 0.001961
+max diff: 0.000122
 gbrapf32le -> yuva444p16le -> gbrap12be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000654
 min diff: 0.000000
 max diff: 0.001961
 gbrapf32le -> gbrp12le -> gbrapf32le
-avg diff: 0.000260
+avg diff: 0.000061
 min diff: 0.000000
-max diff: 0.001135
+max diff: 0.000122
 gbrapf32le -> yuva444p16le -> gbrp12le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000260
 min diff: 0.000000
 max diff: 0.001135
 gbrapf32le -> gbrap12le -> gbrapf32le
-avg diff: 0.000654
+avg diff: 0.000061
 min diff: 0.000000
-max diff: 0.001961
+max diff: 0.000122
 gbrapf32le -> yuva444p16le -> gbrap12le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000654
 min diff: 0.000000
 max diff: 0.001961
 gbrapf32le -> gbrp14be -> gbrapf32le
-avg diff: 0.000253
+avg diff: 0.000015
 min diff: 0.000000
-max diff: 0.001068
+max diff: 0.000031
 gbrapf32le -> yuva444p16le -> gbrp14be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000253
 min diff: 0.000000
 max diff: 0.001068
 gbrapf32le -> gbrp14le -> gbrapf32le
-avg diff: 0.000253
+avg diff: 0.000015
 min diff: 0.000000
-max diff: 0.001068
+max diff: 0.000031
 gbrapf32le -> yuva444p16le -> gbrp14le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000253
 min diff: 0.000000
 max diff: 0.001068
 gbrapf32le -> gbrp16be -> gbrapf32le
-avg diff: 0.000249
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> gbrp16be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000249
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> gbrap16be -> gbrapf32le
-avg diff: 0.000187
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> gbrap16be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000187
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> gbrp16le -> gbrapf32le
-avg diff: 0.000249
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> gbrp16le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000249
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> gbrap16le -> gbrapf32le
-avg diff: 0.000187
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000008
 gbrapf32le -> yuva444p16le -> gbrap16le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000187
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> gbrpf16be -> gbrapf32le
-avg diff: 0.000264
+avg diff: 0.000081
 min diff: 0.000000
-max diff: 0.001213
+max diff: 0.000244
 gbrapf32le -> yuva444p16le -> gbrpf16be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000264
 min diff: 0.000000
 max diff: 0.001213
 gbrapf32le -> gbrapf16be -> gbrapf32le
-avg diff: 0.000218
+avg diff: 0.000081
 min diff: 0.000000
-max diff: 0.001213
+max diff: 0.000244
 gbrapf32le -> yuva444p16le -> gbrapf16be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000218
 min diff: 0.000000
 max diff: 0.001213
 gbrapf32le -> gbrpf16le -> gbrapf32le
-avg diff: 0.000264
+avg diff: 0.000081
 min diff: 0.000000
-max diff: 0.001213
+max diff: 0.000244
 gbrapf32le -> yuva444p16le -> gbrpf16le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000264
 min diff: 0.000000
 max diff: 0.001213
 gbrapf32le -> gbrapf16le -> gbrapf32le
-avg diff: 0.000218
+avg diff: 0.000081
 min diff: 0.000000
-max diff: 0.001213
+max diff: 0.000244
 gbrapf32le -> yuva444p16le -> gbrapf16le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000218
 min diff: 0.000000
 max diff: 0.001213
 gbrapf32le -> gbrpf32be -> gbrapf32le
-avg diff: 0.000249
+avg diff: 0.000000
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000000
 gbrapf32le -> yuva444p16le -> gbrpf32be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000249
 min diff: 0.000000
@@ -527,9 +527,9 @@ avg diff: 0.000187
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> gbrpf32le -> gbrapf32le
-avg diff: 0.000249
+avg diff: 0.000000
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000000
 gbrapf32le -> yuva444p16le -> gbrpf32le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000249
 min diff: 0.000000
@@ -543,65 +543,65 @@ avg diff: 0.000187
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> rgbf16le -> gbrapf32le
-avg diff: 0.000264
+avg diff: 0.000081
 min diff: 0.000000
-max diff: 0.001213
+max diff: 0.000244
 gbrapf32le -> yuva444p16le -> rgbf16le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000264
 min diff: 0.000000
 max diff: 0.001213
 gbrapf32le -> rgbaf16le -> gbrapf32le
-avg diff: 0.000218
+avg diff: 0.000081
 min diff: 0.000000
-max diff: 0.001213
+max diff: 0.000244
 gbrapf32le -> yuva444p16le -> rgbaf16le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000218
 min diff: 0.000000
 max diff: 0.001213
 gbrapf32le -> rgbf16be -> gbrapf32le
-avg diff: 0.000264
+avg diff: 0.000081
 min diff: 0.000000
-max diff: 0.001213
+max diff: 0.000244
 gbrapf32le -> yuva444p16le -> rgbf16be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000264
 min diff: 0.000000
 max diff: 0.001213
 gbrapf32le -> rgbaf16be -> gbrapf32le
-avg diff: 0.000218
+avg diff: 0.000081
 min diff: 0.000000
-max diff: 0.001213
+max diff: 0.000244
 gbrapf32le -> yuva444p16le -> rgbaf16be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000218
 min diff: 0.000000
 max diff: 0.001213
 gbrapf32le -> rgbf32le -> gbrapf32le
-avg diff: 0.000249
+avg diff: 0.000000
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000000
 gbrapf32le -> yuva444p16le -> rgbf32le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000249
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> rgbaf32le -> gbrapf32le
-avg diff: 0.000187
+avg diff: 0.000000
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000000
 gbrapf32le -> yuva444p16le -> rgbaf32le -> yuva444p16le -> gbrapf32le
 avg diff: 0.000187
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> rgbf32be -> gbrapf32le
-avg diff: 0.000249
+avg diff: 0.000000
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000000
 gbrapf32le -> yuva444p16le -> rgbf32be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000249
 min diff: 0.000000
 max diff: 0.000990
 gbrapf32le -> rgbaf32be -> gbrapf32le
-avg diff: 0.000187
+avg diff: 0.000000
 min diff: 0.000000
-max diff: 0.000990
+max diff: 0.000000
 gbrapf32le -> yuva444p16le -> rgbaf32be -> yuva444p16le -> gbrapf32le
 avg diff: 0.000187
 min diff: 0.000000

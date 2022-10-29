@@ -167,81 +167,81 @@ avg diff: 0.006153
 min diff: 0.000000
 max diff: 0.081757
 grayf32le -> gray9le -> grayf32le
-avg diff: 0.005674
+avg diff: 0.000493
 min diff: 0.000000
-max diff: 0.080246
+max diff: 0.000978
 grayf32le -> yuva444p16le -> gray9le -> yuva444p16le -> grayf32le
 avg diff: 0.005674
 min diff: 0.000000
 max diff: 0.080246
 grayf32le -> gray9be -> grayf32le
-avg diff: 0.005674
+avg diff: 0.000493
 min diff: 0.000000
-max diff: 0.080246
+max diff: 0.000978
 grayf32le -> yuva444p16le -> gray9be -> yuva444p16le -> grayf32le
 avg diff: 0.005674
 min diff: 0.000000
 max diff: 0.080246
 grayf32le -> gray10le -> grayf32le
-avg diff: 0.005428
+avg diff: 0.000243
 min diff: 0.000000
-max diff: 0.079407
+max diff: 0.000489
 grayf32le -> yuva444p16le -> gray10le -> yuva444p16le -> grayf32le
 avg diff: 0.005428
 min diff: 0.000000
 max diff: 0.079407
 grayf32le -> gray10be -> grayf32le
-avg diff: 0.005428
+avg diff: 0.000243
 min diff: 0.000000
-max diff: 0.079407
+max diff: 0.000489
 grayf32le -> yuva444p16le -> gray10be -> yuva444p16le -> grayf32le
 avg diff: 0.005428
 min diff: 0.000000
 max diff: 0.079407
 grayf32le -> gray12le -> grayf32le
-avg diff: 0.005266
+avg diff: 0.000061
 min diff: 0.000000
-max diff: 0.078781
+max diff: 0.000122
 grayf32le -> yuva444p16le -> gray12le -> yuva444p16le -> grayf32le
 avg diff: 0.005266
 min diff: 0.000000
 max diff: 0.078781
 grayf32le -> gray12be -> grayf32le
-avg diff: 0.005266
+avg diff: 0.000061
 min diff: 0.000000
-max diff: 0.078781
+max diff: 0.000122
 grayf32le -> yuva444p16le -> gray12be -> yuva444p16le -> grayf32le
 avg diff: 0.005266
 min diff: 0.000000
 max diff: 0.078781
 grayf32le -> gray14le -> grayf32le
-avg diff: 0.005242
+avg diff: 0.000015
 min diff: 0.000000
-max diff: 0.078629
+max diff: 0.000031
 grayf32le -> yuva444p16le -> gray14le -> yuva444p16le -> grayf32le
 avg diff: 0.005242
 min diff: 0.000000
 max diff: 0.078629
 grayf32le -> gray14be -> grayf32le
-avg diff: 0.005242
+avg diff: 0.000015
 min diff: 0.000000
-max diff: 0.078629
+max diff: 0.000031
 grayf32le -> yuva444p16le -> gray14be -> yuva444p16le -> grayf32le
 avg diff: 0.005242
 min diff: 0.000000
 max diff: 0.078629
 grayf32le -> gray16le -> grayf32le
-avg diff: 0.005256
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.078629
+max diff: 0.000008
 grayf32le -> yuva444p16le -> gray16le -> yuva444p16le -> grayf32le
 avg diff: 0.005256
 min diff: 0.000000
 max diff: 0.078629
 grayf32le -> gray16be -> grayf32le
-avg diff: 0.005256
+avg diff: 0.000004
 min diff: 0.000000
-max diff: 0.078629
+max diff: 0.000008
 grayf32le -> yuva444p16le -> gray16be -> yuva444p16le -> grayf32le
 avg diff: 0.005256
 min diff: 0.000000
@@ -249,7 +249,7 @@ max diff: 0.078629
 grayf32le -> grayf16le -> grayf32le
 avg diff: 0.000082
 min diff: 0.000000
-max diff: 0.000252
+max diff: 0.000244
 grayf32le -> yuva444p16le -> grayf16le -> yuva444p16le -> grayf32le
 avg diff: 0.000082
 min diff: 0.000000
@@ -257,7 +257,7 @@ max diff: 0.000252
 grayf32le -> grayf16be -> grayf32le
 avg diff: 0.000082
 min diff: 0.000000
-max diff: 0.000252
+max diff: 0.000244
 grayf32le -> yuva444p16le -> grayf16be -> yuva444p16le -> grayf32le
 avg diff: 0.000082
 min diff: 0.000000

@@ -1758,6 +1758,22 @@ av_cold int sws_init_context(SwsContext *c, SwsFilter *srcFilter,
         }
     }
 
+    if (isFloat16(c->srcFormat)) {
+        c->h2f_tables = av_malloc(sizeof(*c->h2f_tables));
+        if (!c->h2f_tables)
+            return AVERROR(ENOMEM);
+        ff_init_half2float_tables(c->h2f_tables);
+        c->input_opaque = c->h2f_tables;
+    }
+
+    if (isFloat16(c->dstFormat)) {
+        c->f2h_tables = av_malloc(sizeof(*c->f2h_tables));
+        if (!c->f2h_tables)
+            return AVERROR(ENOMEM);
+        ff_init_float2half_tables(c->f2h_tables);
+        c->output_opaque = c->f2h_tables;
+    }
+
     // float will be converted to uint16_t
     if ((srcFormat == AV_PIX_FMT_GRAYF32BE || srcFormat == AV_PIX_FMT_GRAYF32LE) &&
         (!unscaled || unscaled && dstFormat != srcFormat && (srcFormat != AV_PIX_FMT_GRAYF32 ||
@@ -2505,6 +2521,9 @@ void sws_freeContext(SwsContext *c)
 
     av_freep(&c->rgb0_scratch);
     av_freep(&c->xyz_scratch);
+
+    av_freep(&c->h2f_tables);
+    av_freep(&c->f2h_tables);
 
     ff_free_filters(c);
 
