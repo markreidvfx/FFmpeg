@@ -192,14 +192,10 @@ static void fill_ones(SwsSlice *s, int n, int bpc)
     for (i = 0; i < 4; ++i) {
         size = s->plane[i].available_lines;
         for (j = 0; j < size; ++j) {
-            if (bpc == 16) {
+            if (bpc >= 16) {
                 end = (n>>1) + 1;
                 for (k = 0; k < end; ++k)
                     ((int32_t*)(s->plane[i].line[j]))[k] = 1<<18;
-            } else if (bpc == 32) {
-                end = (n>>2) + 1;
-                for (k = 0; k < end; ++k)
-                    ((int64_t*)(s->plane[i].line[j]))[k] = 1LL<<34;
             } else {
                 end = n + 1;
                 for (k = 0; k < end; ++k)
@@ -268,11 +264,8 @@ int ff_init_filters(SwsContext * c)
     lumBufSize = FFMAX(lumBufSize, c->vLumFilterSize + MAX_LINES_AHEAD);
     chrBufSize = FFMAX(chrBufSize, c->vChrFilterSize + MAX_LINES_AHEAD);
 
-    if (c->dstBpc == 16)
+    if (c->dstBpc >= 16)
         dst_stride <<= 1;
-
-    if (c->dstBpc == 32)
-        dst_stride <<= 2;
 
     num_ydesc = need_lum_conv ? 2 : 1;
     num_cdesc = need_chr_conv ? 2 : 1;
