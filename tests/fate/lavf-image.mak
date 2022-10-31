@@ -9,6 +9,18 @@ FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         DPX) += gbrp12le.dpx
 FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         DPX) += rgb48le.dpx
 FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         DPX) += rgb48le_10.dpx
 FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         DPX) += rgba64le.dpx
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += none.grayf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += none.gbrpf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += none.gbrapf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += rle.grayf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += rle.gbrpf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += rle.gbrapf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += zip1.grayf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += zip1.gbrpf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += zip1.gbrapf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += zip16.grayf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += zip16.gbrpf16le.exr
+FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += zip16.gbrapf16le.exr
 FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += none.grayf32le.exr
 FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += none.gbrpf32le.exr
 FATE_LAVF_IMAGES-$(call LAVF_IMAGES,         EXR) += none.gbrapf32le.exr
@@ -60,6 +72,18 @@ $(FATE_LAVF_IMAGES): CMD = lavf_image
 $(FATE_LAVF_IMAGES): REF = $(SRC_PATH)/tests/ref/lavf/$(@:fate-lavf-%=%)
 $(FATE_LAVF_IMAGES): $(VREF)
 
+fate-lavf-none.grayf16le.exr:   CMD = lavf_image "-compression none  -pix_fmt grayf16le" "" "no_file_checksums"
+fate-lavf-rle.grayf16le.exr:    CMD = lavf_image "-compression rle   -pix_fmt grayf16le" "" "no_file_checksums"
+fate-lavf-zip1.grayf16le.exr:   CMD = lavf_image "-compression zip1  -pix_fmt grayf16le" "" "no_file_checksums"
+fate-lavf-zip16.grayf16le.exr:  CMD = lavf_image "-compression zip16 -pix_fmt grayf16le" "" "no_file_checksums"
+fate-lavf-none.gbrpf16le.exr:   CMD = lavf_image "-compression none  -pix_fmt gbrpf16le" "" "no_file_checksums"
+fate-lavf-rle.gbrpf16le.exr:    CMD = lavf_image "-compression rle   -pix_fmt gbrpf16le" "" "no_file_checksums"
+fate-lavf-zip1.gbrpf16le.exr:   CMD = lavf_image "-compression zip1  -pix_fmt gbrpf16le" "" "no_file_checksums"
+fate-lavf-zip16.gbrpf16le.exr:  CMD = lavf_image "-compression zip16 -pix_fmt gbrpf16le" "" "no_file_checksums"
+fate-lavf-none.gbrapf16le.exr:  CMD = lavf_image "-compression none  -pix_fmt gbrapf16le" "" "no_file_checksums"
+fate-lavf-rle.gbrapf16le.exr:   CMD = lavf_image "-compression rle   -pix_fmt gbrapf16le" "" "no_file_checksums"
+fate-lavf-zip1.gbrapf16le.exr:  CMD = lavf_image "-compression zip1  -pix_fmt gbrapf16le" "" "no_file_checksums"
+fate-lavf-zip16.gbrapf16le.exr: CMD = lavf_image "-compression zip16 -pix_fmt gbrapf16le" "" "no_file_checksums"
 fate-lavf-none.grayf32le.exr:   CMD = lavf_image "-compression none  -pix_fmt grayf32le" "" "no_file_checksums"
 fate-lavf-rle.grayf32le.exr:    CMD = lavf_image "-compression rle   -pix_fmt grayf32le" "" "no_file_checksums"
 fate-lavf-zip1.grayf32le.exr:   CMD = lavf_image "-compression zip1  -pix_fmt grayf32le" "" "no_file_checksums"
