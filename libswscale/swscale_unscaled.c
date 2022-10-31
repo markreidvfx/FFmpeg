@@ -1819,7 +1819,7 @@ static int planarCopyWrapper(SwsContext *c, const uint8_t *src[],
             if (is16BPS(c->dstFormat) || isNBPS(c->dstFormat)) {
                 fillPlane16(dst[plane], dstStride[plane], length, height, y,
                         plane == 3, desc_dst->comp[plane].depth,
-                        isBE(c->dstFormat));
+                        isBE(c->dstFormat), isFloat(c->dstFormat));
             } else {
                 fillPlane(dst[plane], dstStride[plane], length, height, y,
                         (plane == 3) ? 255 : 128);

@@ -25,6 +25,8 @@ gbrap12be           ffe9aa4cbcc42f71757efe18826764ac
 gbrap12le           88a85c1b3c5e19e299fdd209b73ac1ba
 gbrap16be           3117e84b258433a7efb9288bbb8815d4
 gbrap16le           3ad08cf8b49d8eb31a1b356ec4b7b88b
+gbrapf16be          f33a216c9a284a40273d88b4a8bb997b
+gbrapf16le          568a6a955fc090cb97ba98b7b18692ee
 gbrapf32be          d82e48eb62c1e2d2ce5d614aeda38a99
 gbrapf32le          323259d76d5c5350091704813f22bf57
 gbrp                0ecfeca171ba3a1a2ff4e92f572b71cf
@@ -38,6 +40,8 @@ gbrp16be            46cf9473646a4b9dbcb05661ade658ec
 gbrp16le            6ce6093b24d09c0edcd55b2d6fec89a0
 gbrp9be             174de037c2a9f2b6fb4d9444ae0ff82f
 gbrp9le             ba7c2631fb2967aa909c66509bd243fe
+gbrpf16be           4a2b745fa91c57d5485cfcc01ae498db
+gbrpf16le           b6a26e582ea6fc147c8adf10716fac57
 gbrpf32be           a53fc24a298bf419051fb57c63cc4cef
 gbrpf32le           b44dae0881043398bfd704a944094737
 gray                8bd4ece1dbf89b20ee785e0515356e07
@@ -88,8 +92,12 @@ rgb8                68a3a575badadd9e4f90226209f11699
 rgba                51961c723ea6707e0a410cd3f21f15d3
 rgba64be            c910444019f4cfbf4d995227af55da8d
 rgba64le            0c810d8b3a6bca10321788e1cb145340
+rgbaf16be           3257df29e97386af258253665bb8619a
+rgbaf16le           67efc1a4afb1e34516a2ecf1f3a47eb4
 rgbaf32be           6077603ed554db4149f82d891e1d1120
 rgbaf32le           3081376a3a9e90fd2849751dfd69094b
+rgbf16be            f0f11de71372eea62e77577fd876c873
+rgbf16le            3e3598c986ec8b7e215c3dfb6c4e9acf
 rgbf32be            0e5ffacba8dc768acfa50fc590dddac6
 rgbf32le            542380fd2490e3227b70373eace3bade
 vuya                7e530261e7ac4eae4fd616fd7572d0b8

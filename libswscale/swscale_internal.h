@@ -36,6 +36,7 @@
 #include "libavutil/slicethread.h"
 #include "libavutil/ppc/util_altivec.h"
 #include "libavutil/half2float.h"
+#include "libavutil/float2half.h"
 
 #define STR(s) AV_TOSTRING(s) // AV_STRINGIFY is too long
 
@@ -682,6 +683,7 @@ typedef struct SwsContext {
     atomic_int   data_unaligned_warned;
 
     Half2FloatTables *h2f_tables;
+    Float2HalfTables *f2h_tables;
 } SwsContext;
 //FIXME check init (where 0)
 
@@ -1017,11 +1019,17 @@ int ff_sws_alphablendaway(SwsContext *c, const uint8_t *src[],
                           uint8_t *dst[], int dstStride[]);
 
 static inline void fillPlane16(uint8_t *plane, int stride, int width, int height, int y,
-                               int alpha, int bits, const int big_endian)
+                               int alpha, int bits, const int big_endian, int is_float)
 {
     int i, j;
     uint8_t *ptr = plane + stride * y;
-    int v = alpha ? 0xFFFF>>(16-bits) : (1<<(bits-1));
+    int v;
+    uint16_t onef16 = 0x3c00;
+    if (is_float)
+        v = alpha ? onef16 : 0;
+    else
+        v = alpha ? 0xFFFF>>(16-bits) : (1<<(bits-1));
+
     for (i = 0; i < height; i++) {
 #define FILL(wfunc) \
         for (j = 0; j < width; j++) {\

@@ -290,6 +290,13 @@ int ff_init_filters(SwsContext * c)
         c->input_opaque = c->h2f_tables;
     }
 
+    if (isFloat16(c->dstFormat)) {
+        c->f2h_tables = av_malloc(sizeof(*c->f2h_tables));
+        if (!c->f2h_tables)
+            return AVERROR(ENOMEM);
+        ff_init_float2half_tables(c->f2h_tables);
+    }
+
     c->desc  = av_calloc(c->numDesc,  sizeof(*c->desc));
     if (!c->desc)
         return AVERROR(ENOMEM);
@@ -400,5 +407,6 @@ int ff_free_filters(SwsContext *c)
         av_freep(&c->slice);
     }
     av_freep(&c->h2f_tables);
+    av_freep(&c->f2h_tables);
     return 0;
 }

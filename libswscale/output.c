@@ -31,6 +31,8 @@
 #include "libavutil/mathematics.h"
 #include "libavutil/mem_internal.h"
 #include "libavutil/pixdesc.h"
+#include "libavutil/intfloat.h"
+#include "libavutil/float2half.h"
 #include "config.h"
 #include "rgb2rgb.h"
 #include "swscale.h"
@@ -2396,6 +2398,169 @@ yuv2gbrp16_full_X_c(SwsContext *c, const int16_t *lumFilter,
 }
 
 static void
+yuv2gbrpf16_full_X_c(SwsContext *c, const int16_t *lumFilter,
+                    const int16_t **lumSrcx, int lumFilterSize,
+                    const int16_t *chrFilter, const int16_t **chrUSrcx,
+                    const int16_t **chrVSrcx, int chrFilterSize,
+                    const int16_t **alpSrcx, uint8_t **dest,
+                    int dstW, int y)
+{
+    const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(c->dstFormat);
+    int i;
+    int hasAlpha = (desc->flags & AV_PIX_FMT_FLAG_ALPHA) && alpSrcx;
+    const Float2HalfTables *f2h_tbl = c->f2h_tables;
+    uint16_t **dest16 = (uint16_t**)dest;
+    const int32_t **lumSrc  = (const int32_t**)lumSrcx;
+    const int32_t **chrUSrc = (const int32_t**)chrUSrcx;
+    const int32_t **chrVSrc = (const int32_t**)chrVSrcx;
+    const int32_t **alpSrc  = (const int32_t**)alpSrcx;
+    static const float float_mult = 1.0f / 65535.0f;
+
+    for (i = 0; i < dstW; i++) {
+        int j;
+        int Y = -0x40000000;
+        int U = -(128 << 23);
+        int V = -(128 << 23);
+        int R, G, B, A;
+
+        for (j = 0; j < lumFilterSize; j++)
+            Y += lumSrc[j][i] * (unsigned)lumFilter[j];
+
+        for (j = 0; j < chrFilterSize; j++) {
+            U += chrUSrc[j][i] * (unsigned)chrFilter[j];
+            V += chrVSrc[j][i] * (unsigned)chrFilter[j];
+        }
+
+        Y >>= 14;
+        Y += 0x10000;
+        U >>= 14;
+        V >>= 14;
+
+        if (hasAlpha) {
+            A = -0x40000000;
+
+            for (j = 0; j < lumFilterSize; j++)
+                A += alpSrc[j][i] * (unsigned)lumFilter[j];
+
+            A >>= 1;
+            A += 0x20002000;
+        }
+
+        Y -= c->yuv2rgb_y_offset;
+        Y *= c->yuv2rgb_y_coeff;
+        Y += (1 << 13) - (1 << 29);
+        R = V * c->yuv2rgb_v2r_coeff;
+        G = V * c->yuv2rgb_v2g_coeff + U * c->yuv2rgb_u2g_coeff;
+        B =                            U * c->yuv2rgb_u2b_coeff;
+
+        R = av_clip_uintp2(((Y + R) >> 14) + (1<<15), 16);
+        G = av_clip_uintp2(((Y + G) >> 14) + (1<<15), 16);
+        B = av_clip_uintp2(((Y + B) >> 14) + (1<<15), 16);
+
+        dest16[0][i] = float2half(av_float2int(float_mult * (float)G), f2h_tbl);
+        dest16[1][i] = float2half(av_float2int(float_mult * (float)B), f2h_tbl);
+        dest16[2][i] = float2half(av_float2int(float_mult * (float)R), f2h_tbl);
+        if (hasAlpha)
+            dest16[3][i] = float2half(av_float2int(float_mult * (float)(av_clip_uintp2(A, 30) >> 14)), f2h_tbl);
+    }
+    if ((!isBE(c->dstFormat)) != (!HAVE_BIGENDIAN)) {
+        for (i = 0; i < dstW; i++) {
+            dest16[0][i] = av_bswap16(dest16[0][i]);
+            dest16[1][i] = av_bswap16(dest16[1][i]);
+            dest16[2][i] = av_bswap16(dest16[2][i]);
+            if (hasAlpha)
+                dest16[3][i] = av_bswap16(dest16[3][i]);
+        }
+    }
+}
+
+static void
+yuv2rgbaf16_full_X_c(SwsContext *c, const int16_t *lumFilter,
+                    const int16_t **lumSrcx, int lumFilterSize,
+                    const int16_t *chrFilter, const int16_t **chrUSrcx,
+                    const int16_t **chrVSrcx, int chrFilterSize,
+                    const int16_t **alpSrcx, uint8_t *dest,
+                    int dstW, int y)
+{
+    const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(c->dstFormat);
+    int i;
+    int alpha = desc->flags & AV_PIX_FMT_FLAG_ALPHA;
+    int hasAlpha = alpha && alpSrcx;
+    int pixelStep = alpha ? 4 : 3;
+    const Float2HalfTables *f2h_tbl = c->f2h_tables;
+    uint16_t *dest16 = (uint16_t*)dest;
+    const int32_t **lumSrc  = (const int32_t**)lumSrcx;
+    const int32_t **chrUSrc = (const int32_t**)chrUSrcx;
+    const int32_t **chrVSrc = (const int32_t**)chrVSrcx;
+    const int32_t **alpSrc  = (const int32_t**)alpSrcx;
+    static const float float_mult = 1.0f / 65535.0f;
+    uint16_t a = 0x3c00;
+
+    for (i = 0; i < dstW; i++) {
+        int j;
+        int Y = -0x40000000;
+        int U = -(128 << 23);
+        int V = -(128 << 23);
+        int R, G, B, A;
+
+        for (j = 0; j < lumFilterSize; j++)
+            Y += lumSrc[j][i] * (unsigned)lumFilter[j];
+
+        for (j = 0; j < chrFilterSize; j++) {
+            U += chrUSrc[j][i] * (unsigned)chrFilter[j];
+            V += chrVSrc[j][i] * (unsigned)chrFilter[j];
+        }
+
+        Y >>= 14;
+        Y += 0x10000;
+        U >>= 14;
+        V >>= 14;
+
+        if (hasAlpha) {
+            A = -0x40000000;
+
+            for (j = 0; j < lumFilterSize; j++)
+                A += alpSrc[j][i] * (unsigned)lumFilter[j];
+
+            A >>= 1;
+            A += 0x20002000;
+            a = float2half(av_float2int(float_mult * (float)(av_clip_uintp2(A, 30) >> 14)), f2h_tbl);
+        }
+
+        Y -= c->yuv2rgb_y_offset;
+        Y *= c->yuv2rgb_y_coeff;
+        Y += (1 << 13) - (1 << 29);
+        R = V * c->yuv2rgb_v2r_coeff;
+        G = V * c->yuv2rgb_v2g_coeff + U * c->yuv2rgb_u2g_coeff;
+        B =                            U * c->yuv2rgb_u2b_coeff;
+
+        R = av_clip_uintp2(((Y + R) >> 14) + (1<<15), 16);
+        G = av_clip_uintp2(((Y + G) >> 14) + (1<<15), 16);
+        B = av_clip_uintp2(((Y + B) >> 14) + (1<<15), 16);
+
+        dest16[0] = float2half(av_float2int(float_mult * (float)R), f2h_tbl);
+        dest16[1] = float2half(av_float2int(float_mult * (float)G), f2h_tbl);
+        dest16[2] = float2half(av_float2int(float_mult * (float)B), f2h_tbl);
+        if (alpha)
+            dest16[3] = a;
+
+        dest16 += pixelStep;
+    }
+    if ((!isBE(c->dstFormat)) != (!HAVE_BIGENDIAN)) {
+        dest16 = (uint16_t*)dest;
+        for (i = 0; i < dstW; i++) {
+            dest16[0] = av_bswap16(dest16[0]);
+            dest16[1] = av_bswap16(dest16[1]);
+            dest16[2] = av_bswap16(dest16[2]);
+            if (alpha)
+                dest16[3] = av_bswap16(dest16[3]);
+
+            dest16 += pixelStep;
+        }
+    }
+}
+
+static void
 yuv2gbrpf32_full_X_c(SwsContext *c, const int16_t *lumFilter,
                     const int16_t **lumSrcx, int lumFilterSize,
                     const int16_t *chrFilter, const int16_t **chrUSrcx,
@@ -3068,7 +3233,12 @@ av_cold void ff_sws_init_output_funcs(SwsContext *c,
                 *yuv2packed1 = yuv2bgrx64be_full_1_c;
             }
             break;
-
+        case AV_PIX_FMT_RGBF16LE:
+        case AV_PIX_FMT_RGBF16BE:
+        case AV_PIX_FMT_RGBAF16LE:
+        case AV_PIX_FMT_RGBAF16BE:
+            *yuv2packedX = yuv2rgbaf16_full_X_c;
+            break;
         case AV_PIX_FMT_RGBF32LE:
         case AV_PIX_FMT_RGBF32BE:
         case AV_PIX_FMT_RGBAF32LE:
@@ -3146,6 +3316,12 @@ av_cold void ff_sws_init_output_funcs(SwsContext *c,
         case AV_PIX_FMT_GBRAP16BE:
         case AV_PIX_FMT_GBRAP16LE:
             *yuv2anyX = yuv2gbrp16_full_X_c;
+            break;
+        case AV_PIX_FMT_GBRPF16BE:
+        case AV_PIX_FMT_GBRPF16LE:
+        case AV_PIX_FMT_GBRAPF16BE:
+        case AV_PIX_FMT_GBRAPF16LE:
+            *yuv2anyX = yuv2gbrpf16_full_X_c;
             break;
         case AV_PIX_FMT_GBRPF32BE:
         case AV_PIX_FMT_GBRPF32LE:

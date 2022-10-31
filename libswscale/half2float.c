@@ -17,3 +17,4 @@
  */
 
 #include "libavutil/half2float.c"
+#include "libavutil/float2half.c"

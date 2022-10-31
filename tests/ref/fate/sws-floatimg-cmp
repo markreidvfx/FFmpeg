@@ -118,6 +118,38 @@ gbrpf32le -> gbrap16le -> gbrpf32le
 avg diff: 0.000249
 min diff: 0.000000
 max diff: 0.000990
+gbrpf32le -> gbrpf16be -> gbrpf32le
+avg diff: 0.000264
+min diff: 0.000000
+max diff: 0.001213
+gbrpf32le -> gbrapf16be -> gbrpf32le
+avg diff: 0.000264
+min diff: 0.000000
+max diff: 0.001213
+gbrpf32le -> gbrpf16le -> gbrpf32le
+avg diff: 0.000264
+min diff: 0.000000
+max diff: 0.001213
+gbrpf32le -> gbrapf16le -> gbrpf32le
+avg diff: 0.000264
+min diff: 0.000000
+max diff: 0.001213
+gbrpf32le -> rgbf16le -> gbrpf32le
+avg diff: 0.000264
+min diff: 0.000000
+max diff: 0.001213
+gbrpf32le -> rgbaf16le -> gbrpf32le
+avg diff: 0.000264
+min diff: 0.000000
+max diff: 0.001213
+gbrpf32le -> rgbf16be -> gbrpf32le
+avg diff: 0.000264
+min diff: 0.000000
+max diff: 0.001213
+gbrpf32le -> rgbaf16be -> gbrpf32le
+avg diff: 0.000264
+min diff: 0.000000
+max diff: 0.001213
 gbrpf32le -> rgbf32le -> gbrpf32le
 avg diff: 0.000249
 min diff: 0.000000
