@@ -1182,7 +1182,7 @@ static int decode_block(AVCodecContext *avctx, void *tdata,
     int line, col = 0;
     uint64_t tile_x, tile_y, tile_level_x, tile_level_y;
     const uint8_t *src;
-    int step = s->desc->flags & AV_PIX_FMT_FLAG_FLOAT ? 4 : 2 * s->desc->nb_components;
+    int step = s->desc->flags & AV_PIX_FMT_FLAG_FLOAT ? s->desc->comp[0].step : 2 * s->desc->nb_components;
     int bxmin = 0, axmax = 0, window_xoffset = 0;
     int window_xmin, window_xmax, window_ymin, window_ymax;
     int data_xoffset, data_yoffset, data_window_offset, xsize, ysize;
@@ -1372,7 +1372,7 @@ static int decode_block(AVCodecContext *avctx, void *tdata,
 
         for (c = 0; c < channel_count; c++) {
             int plane = s->desc->comp[c].plane;
-            ptr = p->data[plane] + window_ymin * p->linesize[plane] + (window_xmin * 4);
+            ptr = p->data[plane] + window_ymin * p->linesize[plane] + (window_xmin * step);
 
             for (i = 0; i < ysize; i++, ptr += p->linesize[plane]) {
                 const uint8_t *src;
@@ -1382,12 +1382,14 @@ static int decode_block(AVCodecContext *avctx, void *tdata,
                 ptr_x = (union av_intfloat32 *)ptr;
 
                 // Zero out the start if xmin is not 0
-                memset(ptr_x, 0, bxmin);
+                memset(ptr, 0, bxmin);
                 ptr_x += window_xoffset;
 
-                if (s->pixel_type == EXR_FLOAT ||
-                    s->compression == EXR_DWAA ||
-                    s->compression == EXR_DWAB) {
+                if (!trc_func && one_gamma == 1.0f) {
+                    memcpy(ptr + bxmin, src, xsize * step);
+                } else if (s->pixel_type == EXR_FLOAT ||
+                           s->compression == EXR_DWAA ||
+                           s->compression == EXR_DWAB) {
                     // 32-bit
                     union av_intfloat32 t;
                     if (trc_func && c < 3) {
@@ -1424,7 +1426,7 @@ static int decode_block(AVCodecContext *avctx, void *tdata,
                 }
 
                 // Zero out the end if xmax+1 is not w
-                memset(ptr_x, 0, axmax);
+                memset(ptr + bxmin + xsize * step, 0, axmax);
                 channel_buffer[c] += td->channel_line_size;
             }
         }
@@ -2024,7 +2026,7 @@ static int decode_frame(AVCodecContext *avctx, AVFrame *picture,
     GetByteContext *gb = &s->gb;
     uint8_t *ptr;
 
-    int i, y, ret, ymax;
+    int i, y, ret, ymax, convertf32;
     int planes;
     int out_line_size;
     int nb_blocks;   /* nb scanline or nb tile */
@@ -2043,21 +2045,39 @@ static int decode_frame(AVCodecContext *avctx, AVFrame *picture,
             s->channel_offsets[i] *= 2;
     }
 
+    convertf32 =  (s->apply_trc_type != AVCOL_TRC_UNSPECIFIED || s->gamma != 1.0f ||
+                   s->compression == EXR_DWAA || s->compression == EXR_DWAB);
+
     switch (s->pixel_type) {
-    case EXR_FLOAT:
     case EXR_HALF:
         if (s->channel_offsets[3] >= 0) {
             if (!s->is_luma) {
-                avctx->pix_fmt = AV_PIX_FMT_GBRAPF32;
+                avctx->pix_fmt = convertf32 ? AV_PIX_FMT_GBRAPF32 : AV_PIX_FMT_GBRAPF16LE;
             } else {
                 /* todo: change this when a floating point pixel format with luma with alpha is implemented */
-                avctx->pix_fmt = AV_PIX_FMT_GBRAPF32;
+                avctx->pix_fmt = convertf32 ? AV_PIX_FMT_GBRAPF32 : AV_PIX_FMT_GBRAPF16LE;
             }
         } else {
             if (!s->is_luma) {
-                avctx->pix_fmt = AV_PIX_FMT_GBRPF32;
+                avctx->pix_fmt = convertf32 ? AV_PIX_FMT_GBRPF32 : AV_PIX_FMT_GBRPF16LE;
             } else {
-                avctx->pix_fmt = AV_PIX_FMT_GRAYF32;
+                avctx->pix_fmt = convertf32 ? AV_PIX_FMT_GRAYF32 : AV_PIX_FMT_GRAYF16LE;
+            }
+        }
+        break;
+    case EXR_FLOAT:
+        if (s->channel_offsets[3] >= 0) {
+            if (!s->is_luma) {
+                avctx->pix_fmt = convertf32 ? AV_PIX_FMT_GBRAPF32 : AV_PIX_FMT_GBRAPF32LE;
+            } else {
+                /* todo: change this when a floating point pixel format with luma with alpha is implemented */
+                avctx->pix_fmt = convertf32 ? AV_PIX_FMT_GBRAPF32 : AV_PIX_FMT_GBRAPF32LE;
+            }
+        } else {
+            if (!s->is_luma) {
+                avctx->pix_fmt = convertf32 ? AV_PIX_FMT_GBRPF32 : AV_PIX_FMT_GBRPF32LE;
+            } else {
+                avctx->pix_fmt = convertf32 ? AV_PIX_FMT_GRAYF32 : AV_PIX_FMT_GRAYF32LE;
             }
         }
         break;
@@ -2130,7 +2150,7 @@ static int decode_frame(AVCodecContext *avctx, AVFrame *picture,
 
     if (s->desc->flags & AV_PIX_FMT_FLAG_FLOAT) {
         planes           = s->desc->nb_components;
-        out_line_size    = avctx->width * 4;
+        out_line_size    = avctx->width * s->desc->comp[0].step;
     } else {
         planes           = 1;
         out_line_size    = avctx->width * 2 * s->desc->nb_components;
