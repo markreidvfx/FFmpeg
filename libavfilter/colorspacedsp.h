@@ -73,6 +73,8 @@ typedef struct ColorSpaceDSPContext {
      * (our internal data format) */
     void (*multiply3x3)(int16_t *data[3], ptrdiff_t stride,
                         int w, int h, const int16_t m[3][3][8]);
+    void (*multiply3x3_f32)(float *data[3], ptrdiff_t stride,
+                            int w, int h, const float m[3][3][8]);
 } ColorSpaceDSPContext;
 
 void ff_colorspacedsp_init(ColorSpaceDSPContext *dsp);

@@ -99,6 +99,26 @@ static void multiply3x3_c(int16_t *buf[3], ptrdiff_t stride,
     }
 }
 
+static void multiply3x3_f32_c(float *buf[3], ptrdiff_t stride,
+                              int w, int h, const float m[3][3][8])
+{
+    int y, x;
+    float *buf0 = buf[0], *buf1 = buf[1], *buf2 = buf[2];
+
+    for (y = 0; y < h; y++) {
+        for (x = 0; x < w; x++) {
+            float v0 = buf0[x], v1 = buf1[x], v2 = buf2[x];
+            buf0[x] = m[0][0][0] * v0 + m[0][1][0] * v1 + m[0][2][0] * v2;
+            buf1[x] = m[1][0][0] * v0 + m[1][1][0] * v1 + m[1][2][0] * v2;
+            buf2[x] = m[2][0][0] * v0 + m[2][1][0] * v1 + m[2][2][0] * v2;
+        }
+
+        buf0 += stride;
+        buf1 += stride;
+        buf2 += stride;
+    }
+}
+
 void ff_colorspacedsp_init(ColorSpaceDSPContext *dsp)
 {
 #define init_yuv2rgb_fn(bit) \
@@ -142,6 +162,7 @@ void ff_colorspacedsp_init(ColorSpaceDSPContext *dsp)
     init_yuv2yuv_fns(12);
 
     dsp->multiply3x3 = multiply3x3_c;
+    dsp->multiply3x3_f32 = multiply3x3_f32_c;
 
 #if ARCH_X86
     ff_colorspacedsp_x86_init(dsp);

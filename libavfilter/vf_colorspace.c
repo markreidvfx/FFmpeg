@@ -24,7 +24,11 @@
  */
 
 #include "libavutil/avassert.h"
+#include "libavutil/color_utils.h"
 #include "libavutil/csp.h"
+#include "libavutil/float2half.h"
+#include "libavutil/half2float.h"
+#include "libavutil/intfloat.h"
 #include "libavutil/mem_internal.h"
 #include "libavutil/opt.h"
 #include "libavutil/pixdesc.h"
@@ -122,7 +126,7 @@ typedef struct ColorSpaceContext {
     enum DitherMode dither;
     enum WhitepointAdaptation wp_adapt;
 
-    int16_t *rgb[3];
+    uint8_t *rgb[3];
     ptrdiff_t rgb_stride;
     unsigned rgb_sz;
     int *dither_scratch[3][2], *dither_scratch_base[3][2];
@@ -130,10 +134,14 @@ typedef struct ColorSpaceContext {
     const AVColorPrimariesDesc *in_primaries, *out_primaries;
     int lrgb2lrgb_passthrough;
     DECLARE_ALIGNED(16, int16_t, lrgb2lrgb_coeffs)[3][3][8];
+    DECLARE_ALIGNED(32, float,   lrgb2lrgb_coeffsf)[3][3][8];
 
     const struct TransferCharacteristics *in_txchr, *out_txchr;
     int rgb2rgb_passthrough;
     int16_t *lin_lut, *delin_lut;
+
+    Float2HalfTables *f2h_tbl;
+    Half2FloatTables *h2f_tbl;
 
     const AVLumaCoefficients *in_lumacoef, *out_lumacoef;
     int yuv2yuv_passthrough, yuv2yuv_fastmode;
@@ -141,6 +149,8 @@ typedef struct ColorSpaceContext {
     DECLARE_ALIGNED(16, int16_t, rgb2yuv_coeffs)[3][3][8];
     DECLARE_ALIGNED(16, int16_t, yuv2yuv_coeffs)[3][3][8];
     DECLARE_ALIGNED(16, int16_t, yuv_offset)[2 /* in, out */][8];
+
+    avpriv_trc_function out_trc_fn;
     yuv2rgb_fn yuv2rgb;
     rgb2yuv_fn rgb2yuv;
     rgb2yuv_fsb_fn rgb2yuv_fsb;
@@ -149,6 +159,8 @@ typedef struct ColorSpaceContext {
     int in_y_rng, in_uv_rng, out_y_rng, out_uv_rng;
 
     int did_warn_range;
+    int is_float;
+    int is_float16;
 } ColorSpaceContext;
 
 // FIXME deal with odd width/heights
@@ -195,8 +207,13 @@ static int fill_gamma_table(ColorSpaceContext *s)
     double in_alpha = s->in_txchr->alpha, in_beta = s->in_txchr->beta;
     double in_gamma = s->in_txchr->gamma, in_delta = s->in_txchr->delta;
     double in_ialpha = 1.0 / in_alpha, in_igamma = 1.0 / in_gamma, in_idelta = 1.0 / in_delta;
-    double out_alpha = s->out_txchr->alpha, out_beta = s->out_txchr->beta;
-    double out_gamma = s->out_txchr->gamma, out_delta = s->out_txchr->delta;
+    double out_alpha = 0.0, out_beta = 0.0;
+    double out_gamma = 0.0, out_delta = 0.0;
+
+    if (!s->out_trc_fn) {
+        out_alpha = s->out_txchr->alpha, out_beta = s->out_txchr->beta;
+        out_gamma = s->out_txchr->gamma, out_delta = s->out_txchr->delta;
+    }
 
     s->lin_lut = av_malloc(sizeof(*s->lin_lut) * 32768 * 2);
     if (!s->lin_lut)
@@ -206,12 +223,16 @@ static int fill_gamma_table(ColorSpaceContext *s)
         double v = (n - 2048.0) / 28672.0, d, l;
 
         // delinearize
-        if (v <= -out_beta) {
-            d = -out_alpha * pow(-v, out_gamma) + (out_alpha - 1.0);
-        } else if (v < out_beta) {
-            d = out_delta * v;
+        if (s->out_trc_fn) {
+            d = s->out_trc_fn(v);
         } else {
-            d = out_alpha * pow(v, out_gamma) - (out_alpha - 1.0);
+            if (v <= -out_beta) {
+                d = -out_alpha * pow(-v, out_gamma) + (out_alpha - 1.0);
+            } else if (v < out_beta) {
+                d = out_delta * v;
+            } else {
+                d = out_alpha * pow(v, out_gamma) - (out_alpha - 1.0);
+            }
         }
         s->delin_lut[n] = av_clip_int16(lrint(d * 28672.0));
 
@@ -224,6 +245,64 @@ static int fill_gamma_table(ColorSpaceContext *s)
             l = pow((v + in_alpha - 1.0) * in_ialpha, in_igamma);
         }
         s->lin_lut[n] = av_clip_int16(lrint(l * 28672.0));
+    }
+
+    return 0;
+}
+
+static int fill_gamma_table_f16(ColorSpaceContext *s)
+{
+    int n;
+    uint16_t *lin_lut;
+    uint16_t *delin_lut;
+    double in_alpha = s->in_txchr->alpha, in_beta = s->in_txchr->beta;
+    double in_gamma = s->in_txchr->gamma, in_delta = s->in_txchr->delta;
+    double in_ialpha = 1.0 / in_alpha, in_igamma = 1.0 / in_gamma, in_idelta = 1.0 / in_delta;
+    double out_alpha = 0.0, out_beta = 0.0;
+    double out_gamma = 0.0, out_delta = 0.0;
+
+    if (!s->out_trc_fn) {
+        out_alpha = s->out_txchr->alpha, out_beta = s->out_txchr->beta;
+        out_gamma = s->out_txchr->gamma, out_delta = s->out_txchr->delta;
+    }
+
+    s->lin_lut = av_malloc(sizeof(*s->lin_lut) * 65536 * 2);
+    if (!s->lin_lut)
+        return AVERROR(ENOMEM);
+    s->delin_lut = &s->lin_lut[65536];
+
+    lin_lut   = (uint16_t *)s->lin_lut;
+    delin_lut = (uint16_t *)s->delin_lut ;
+
+    for (n = 0; n < 65536; n++) {
+        double d, l;
+        double v = (double)av_int2float(half2float(n, s->h2f_tbl));
+
+        // delinearize
+        if (s->out_trc_fn) {
+            d = s->out_trc_fn(v);
+        } else {
+            if (v <= -out_beta) {
+                d = -out_alpha * pow(-v, out_gamma) + (out_alpha - 1.0);
+            } else if (v < out_beta) {
+                d = out_delta * v;
+            } else {
+                d = out_alpha * pow(v, out_gamma) - (out_alpha - 1.0);
+            }
+        }
+
+        delin_lut[n] = float2half(av_float2int((float)d), s->f2h_tbl);
+
+        // linearize
+        if (v <= -in_beta * in_delta) {
+            l = -pow((1.0 - in_alpha - v) * in_ialpha, in_igamma);
+        } else if (v < in_beta * in_delta) {
+            l = v * in_idelta;
+        } else {
+            l = pow((v + in_alpha - 1.0) * in_ialpha, in_igamma);
+        }
+        lin_lut[n] = float2half(av_float2int((float)l), s->f2h_tbl);
+
     }
 
     return 0;
@@ -290,7 +369,7 @@ static void apply_lut(int16_t *buf[3], ptrdiff_t stride,
 
 typedef struct ThreadData {
     AVFrame *in, *out;
-    ptrdiff_t in_linesize[3], out_linesize[3];
+    ptrdiff_t in_linesize[4], out_linesize[4];
     int in_ss_h, out_ss_h;
 } ThreadData;
 
@@ -303,6 +382,7 @@ static int convert(AVFilterContext *ctx, void *data, int job_nr, int n_jobs)
     int h_in = (td->in->height + 1) >> 1;
     int h1 = 2 * (job_nr * h_in / n_jobs), h2 = 2 * ((job_nr + 1) * h_in / n_jobs);
     int w = td->in->width, h = h2 - h1;
+    int rgb_stride = s->rgb_stride / 2;
 
     in_data[0]  = td->in->data[0]  + td->in_linesize[0]  *  h1;
     in_data[1]  = td->in->data[1]  + td->in_linesize[1]  * (h1 >> td->in_ss_h);
@@ -310,9 +390,9 @@ static int convert(AVFilterContext *ctx, void *data, int job_nr, int n_jobs)
     out_data[0] = td->out->data[0] + td->out_linesize[0] *  h1;
     out_data[1] = td->out->data[1] + td->out_linesize[1] * (h1 >> td->out_ss_h);
     out_data[2] = td->out->data[2] + td->out_linesize[2] * (h1 >> td->out_ss_h);
-    rgb[0]      = s->rgb[0]        + s->rgb_stride       *  h1;
-    rgb[1]      = s->rgb[1]        + s->rgb_stride       *  h1;
-    rgb[2]      = s->rgb[2]        + s->rgb_stride       *  h1;
+    rgb[0]      = (uint16_t*)(s->rgb[0] + s->rgb_stride  *  h1);
+    rgb[1]      = (uint16_t*)(s->rgb[1] + s->rgb_stride  *  h1);
+    rgb[2]      = (uint16_t*)(s->rgb[2] + s->rgb_stride  *  h1);
 
     // FIXME for simd, also make sure we do pictures with negative stride
     // top-down so we don't overwrite lines with padding of data before it
@@ -344,20 +424,234 @@ static int convert(AVFilterContext *ctx, void *data, int job_nr, int n_jobs)
          *   filter, you can use swscale to convert to yuv444p.
          * - all coefficients are 14bit (so in the [-2.0,2.0] range).
          */
-        s->yuv2rgb(rgb, s->rgb_stride, in_data, td->in_linesize, w, h,
+        s->yuv2rgb(rgb, rgb_stride, in_data, td->in_linesize, w, h,
                    s->yuv2rgb_coeffs, s->yuv_offset[0]);
         if (!s->rgb2rgb_passthrough) {
-            apply_lut(rgb, s->rgb_stride, w, h, s->lin_lut);
+            apply_lut(rgb, rgb_stride, w, h, s->lin_lut);
             if (!s->lrgb2lrgb_passthrough)
-                s->dsp.multiply3x3(rgb, s->rgb_stride, w, h, s->lrgb2lrgb_coeffs);
-            apply_lut(rgb, s->rgb_stride, w, h, s->delin_lut);
+                s->dsp.multiply3x3(rgb, rgb_stride, w, h, s->lrgb2lrgb_coeffs);
+            apply_lut(rgb, rgb_stride, w, h, s->delin_lut);
         }
         if (s->dither == DITHER_FSB) {
-            s->rgb2yuv_fsb(out_data, td->out_linesize, rgb, s->rgb_stride, w, h,
+            s->rgb2yuv_fsb(out_data, td->out_linesize, rgb, rgb_stride, w, h,
                            s->rgb2yuv_coeffs, s->yuv_offset[1], s->dither_scratch);
         } else {
-            s->rgb2yuv(out_data, td->out_linesize, rgb, s->rgb_stride, w, h,
+            s->rgb2yuv(out_data, td->out_linesize, rgb, rgb_stride, w, h,
                        s->rgb2yuv_coeffs, s->yuv_offset[1]);
+        }
+    }
+
+    return 0;
+}
+
+static void apply_lut_f16(uint16_t *out[3], const ptrdiff_t out_linesize[3],
+                          uint16_t *in[3], const ptrdiff_t in_linesize[3], int w, int h,
+                          const uint16_t *lut)
+{
+    int y, x, n;
+    for (n = 0; n < 3; n++) {
+        const uint16_t *src = in[n];
+        uint16_t *dst = out[n];
+
+        for (y = 0; y < h; y++) {
+            for (x = 0; x < w; x++)
+                dst[x] = lut[src[x]];
+
+            src += in_linesize[n]  / 2;
+            dst += out_linesize[n] / 2;
+        }
+    }
+}
+
+static void multiply3x3_f16(ColorSpaceContext *s, uint16_t *buf[3], ptrdiff_t stride,
+                            int w, int h, const float m[3][3][8])
+{
+    int y, x;
+    uint16_t *buf0 = buf[0], *buf1 = buf[1], *buf2 = buf[2];
+
+    for (y = 0; y < h; y++) {
+        for (x = 0; x < w; x++) {
+            float v0 = av_int2float(half2float(buf0[x], s->h2f_tbl));
+            float v1 = av_int2float(half2float(buf1[x], s->h2f_tbl));
+            float v2 = av_int2float(half2float(buf2[x], s->h2f_tbl));
+            buf0[x] = float2half(av_float2int(m[0][0][0] * v0 + m[0][1][0] * v1 + m[0][2][0] * v2), s->f2h_tbl);
+            buf1[x] = float2half(av_float2int(m[1][0][0] * v0 + m[1][1][0] * v1 + m[1][2][0] * v2), s->f2h_tbl);
+            buf2[x] = float2half(av_float2int(m[2][0][0] * v0 + m[2][1][0] * v1 + m[2][2][0] * v2), s->f2h_tbl);
+        }
+
+        buf0 += stride;
+        buf1 += stride;
+        buf2 += stride;
+    }
+}
+
+static int convert_f16(AVFilterContext *ctx, void *data, int job_nr, int n_jobs)
+{
+    const ThreadData *td = data;
+    ColorSpaceContext *s = ctx->priv;
+    uint16_t *in_data[4], *out_data[4];
+    uint16_t *rgb[3];
+    int h_in = (td->in->height + 1) >> 1;
+    int h1 = 2 * (job_nr * h_in / n_jobs), h2 = 2 * ((job_nr + 1) * h_in / n_jobs);
+    int w = td->in->width, h = h2 - h1;
+    ptrdiff_t rgb_stride[3] = { s->rgb_stride, s->rgb_stride, s->rgb_stride };
+
+    // GBR order
+    in_data[0]  = (uint16_t*)(td->in->data[2]  + td->in_linesize[2]  * h1);
+    in_data[1]  = (uint16_t*)(td->in->data[0]  + td->in_linesize[0]  * h1);
+    in_data[2]  = (uint16_t*)(td->in->data[1]  + td->in_linesize[1]  * h1);
+    in_data[3]  = (uint16_t*)(td->in->data[3]  + td->in_linesize[3]  * h1);
+    out_data[0] = (uint16_t*)(td->out->data[2] + td->out_linesize[2] * h1);
+    out_data[1] = (uint16_t*)(td->out->data[0] + td->out_linesize[0] * h1);
+    out_data[2] = (uint16_t*)(td->out->data[1] + td->out_linesize[1] * h1);
+    out_data[3] = (uint16_t*)(td->out->data[3] + td->out_linesize[3] * h1);
+    rgb[0]      = (uint16_t*)(s->rgb[0]        + s->rgb_stride       * h1);
+    rgb[1]      = (uint16_t*)(s->rgb[1]        + s->rgb_stride       * h1);
+    rgb[2]      = (uint16_t*)(s->rgb[2]        + s->rgb_stride       * h1);
+
+    if (s->in_trc == AVCOL_TRC_LINEAR && s->lrgb2lrgb_passthrough) {
+        apply_lut_f16(out_data, td->out_linesize,
+                      in_data, td->in_linesize, w, h, s->delin_lut);
+    } else {
+        apply_lut_f16(rgb, rgb_stride, in_data, td->in_linesize, w, h, (uint16_t*)s->lin_lut);
+        if (!s->lrgb2lrgb_passthrough)
+            multiply3x3_f16(s, rgb, s->rgb_stride/2, w, h, s->lrgb2lrgb_coeffsf);
+        apply_lut_f16(out_data, td->out_linesize, rgb, rgb_stride, w, h, (uint16_t*)s->delin_lut);
+    }
+
+    // // copy alpha
+    if(in_data[3]) {
+        uint8_t *src = (uint8_t*)in_data[3];
+        uint8_t *dst = (uint8_t*)out_data[3];
+        for (int y = 0; y < h; y++) {
+            memcpy(dst, src, td->in_linesize[3]);
+            src += td->in_linesize[3];
+            dst += td->out_linesize[3];
+        }
+    }
+
+    return 0;
+}
+
+static void apply_linearize_f32(ColorSpaceContext *s,
+                                float *out[3], const ptrdiff_t out_linesize[3],
+                                float *in[3], const ptrdiff_t in_linesize[3], int w, int h)
+{
+    int y, x, n;
+    float v;
+
+    double in_alpha = s->in_txchr->alpha, in_beta = s->in_txchr->beta;
+    double in_gamma = s->in_txchr->gamma, in_delta = s->in_txchr->delta;
+    double in_ialpha = 1.0 / in_alpha, in_igamma = 1.0 / in_gamma, in_idelta = 1.0 / in_delta;
+
+    for (n = 0; n < 3; n++) {
+        const float *src = in[n];
+        float *dst = out[n];
+
+        for (y = 0; y < h; y++) {
+            for (x = 0; x < w; x++) {
+                v =  src[x];
+                if (v <= -in_beta * in_delta) {
+                    v = -powf((1.0 - in_alpha - v) * in_ialpha, in_igamma);
+                } else if (v < in_beta * in_delta) {
+                    v = v * in_idelta;
+                } else {
+                    v = powf((v + in_alpha - 1.0) * in_ialpha, in_igamma);
+                }
+
+                dst[x] = v;
+            }
+
+            src += in_linesize[n] / 4;
+            dst += out_linesize[n] / 4;
+        }
+    }
+}
+
+static void apply_delinearize_f32(ColorSpaceContext *s,
+                                  float *out[3], const ptrdiff_t out_linesize[3],
+                                  float *in[3], const ptrdiff_t in_linesize[3], int w, int h)
+{
+    int y, x, n;
+    float v;
+
+    double out_alpha = 0.0, out_beta = 0.0;
+    double out_gamma = 0.0, out_delta = 0.0;
+
+    if (!s->out_trc_fn) {
+        out_alpha = s->out_txchr->alpha, out_beta = s->out_txchr->beta;
+        out_gamma = s->out_txchr->gamma, out_delta = s->out_txchr->delta;
+    }
+
+    for (n = 0; n < 3; n++) {
+        const float *src = in[n];
+        float *dst = out[n];
+
+        for (y = 0; y < h; y++) {
+            for (x = 0; x < w; x++) {
+                v =  src[x];
+                if (s->out_trc_fn) {
+                    v = s->out_trc_fn(v);
+                } else {
+                    if (v <= -out_beta) {
+                        v = -out_alpha * powf(-v, out_gamma) + (out_alpha - 1.0);
+                    } else if (v < out_beta) {
+                        v = out_delta * v;
+                    } else {
+                        v = out_alpha * powf(v, out_gamma) - (out_alpha - 1.0);
+                    }
+                }
+                dst[x] = v;
+            }
+
+            src += in_linesize[n] / 4;
+            dst += out_linesize[n] / 4;
+        }
+    }
+}
+
+static int convert_f32(AVFilterContext *ctx, void *data, int job_nr, int n_jobs)
+{
+    const ThreadData *td = data;
+    ColorSpaceContext *s = ctx->priv;
+    float *in_data[4], *out_data[4];
+    float *rgb[3];
+    int h_in = (td->in->height + 1) >> 1;
+    int h1 = 2 * (job_nr * h_in / n_jobs), h2 = 2 * ((job_nr + 1) * h_in / n_jobs);
+    int w = td->in->width, h = h2 - h1;
+    ptrdiff_t rgb_stride[3] = { s->rgb_stride, s->rgb_stride, s->rgb_stride };
+
+    // GBR order
+    in_data[0]  = (float*)(td->in->data[2]  + td->in_linesize[2]  * h1);
+    in_data[1]  = (float*)(td->in->data[0]  + td->in_linesize[0]  * h1);
+    in_data[2]  = (float*)(td->in->data[1]  + td->in_linesize[1]  * h1);
+    in_data[3]  = (float*)(td->in->data[3]  + td->in_linesize[3]  * h1);
+    out_data[0] = (float*)(td->out->data[2] + td->out_linesize[2] * h1);
+    out_data[1] = (float*)(td->out->data[0] + td->out_linesize[0] * h1);
+    out_data[2] = (float*)(td->out->data[1] + td->out_linesize[1] * h1);
+    out_data[3] = (float*)(td->out->data[3] + td->out_linesize[3] * h1);
+    rgb[0]      = (float*)(s->rgb[0]        + s->rgb_stride       * h1);
+    rgb[1]      = (float*)(s->rgb[1]        + s->rgb_stride       * h1);
+    rgb[2]      = (float*)(s->rgb[2]        + s->rgb_stride       * h1);
+
+    if (s->in_trc == AVCOL_TRC_LINEAR && s->lrgb2lrgb_passthrough) {
+        apply_delinearize_f32(s, out_data, td->out_linesize,
+                              in_data, td->in_linesize, w, h);
+    } else {
+        apply_linearize_f32(s, rgb, rgb_stride,in_data, td->in_linesize, w, h);
+        if (!s->lrgb2lrgb_passthrough)
+            s->dsp.multiply3x3_f32(rgb, s->rgb_stride/4, w, h, s->lrgb2lrgb_coeffsf);
+        apply_delinearize_f32(s, out_data, td->out_linesize, rgb, rgb_stride, w, h);
+    }
+
+    // copy alpha
+    if(in_data[3]) {
+        uint8_t *src = (uint8_t*)in_data[3];
+        uint8_t *dst = (uint8_t*)out_data[3];
+        for (int y = 0; y < h; y++) {
+            memcpy(dst, src, td->in_linesize[3]);
+            src += td->in_linesize[3];
+            dst += td->out_linesize[3];
         }
     }
 
@@ -402,14 +696,21 @@ static int create_filtergraph(AVFilterContext *ctx,
     const AVPixFmtDescriptor *out_desc = av_pix_fmt_desc_get(out->format);
     int emms = 0, m, n, o, res, fmt_identical, redo_yuv2rgb = 0, redo_rgb2yuv = 0;
 
-#define supported_depth(d) ((d) == 8 || (d) == 10 || (d) == 12)
+#define supported_depth(d) ((d) == 8 || (d) == 10 || (d) == 12 || (d) == 16 || (d) == 32)
 #define supported_subsampling(lcw, lch) \
     (((lcw) == 0 && (lch) == 0) || ((lcw) == 1 && (lch) == 0) || ((lcw) == 1 && (lch) == 1))
 #define supported_format(d) \
-    ((d) != NULL && (d)->nb_components == 3 && \
-     !((d)->flags & AV_PIX_FMT_FLAG_RGB) && \
+    ((d) != NULL && (d)->nb_components >= 3 && \
      supported_depth((d)->comp[0].depth) && \
      supported_subsampling((d)->log2_chroma_w, (d)->log2_chroma_h))
+
+    if ((in_desc->flags & AV_PIX_FMT_FLAG_RGB) != (out_desc->flags & AV_PIX_FMT_FLAG_RGB)) {
+        av_log(ctx, AV_LOG_ERROR,
+               "Unsupported format conversion %d (%s) to %d (%s)\n",
+               in->format, av_get_pix_fmt_name(in->format),
+               out->format, av_get_pix_fmt_name(out->format));
+        return AVERROR(EINVAL);
+    }
 
     if (!supported_format(in_desc)) {
         av_log(ctx, AV_LOG_ERROR,
@@ -424,6 +725,25 @@ static int create_filtergraph(AVFilterContext *ctx,
                out->format, av_get_pix_fmt_name(out->format),
                out_desc ? out_desc->comp[0].depth : -1);
         return AVERROR(EINVAL);
+    }
+
+    s->is_float = in_desc->flags & AV_PIX_FMT_FLAG_FLOAT;
+
+    if (s->is_float && in_desc->comp[0].depth == 16) {
+        s->is_float16 = 1;
+        if (!s->f2h_tbl) {
+            s->f2h_tbl = av_malloc(sizeof(*s->f2h_tbl));
+            if (!s->f2h_tbl)
+                return AVERROR(ENOMEM);
+            ff_init_float2half_tables(s->f2h_tbl);
+        }
+
+        if (!s->h2f_tbl) {
+            s->h2f_tbl = av_malloc(sizeof(*s->h2f_tbl));
+            if (!s->h2f_tbl)
+                return AVERROR(ENOMEM);
+            ff_init_half2float_tables(s->h2f_tbl);
+        }
     }
 
     if (in->color_primaries  != s->in_prm)  s->in_primaries  = NULL;
@@ -490,8 +810,11 @@ static int create_filtergraph(AVFilterContext *ctx,
             for (m = 0; m < 3; m++)
                 for (n = 0; n < 3; n++) {
                     s->lrgb2lrgb_coeffs[m][n][0] = lrint(16384.0 * rgb2rgb[m][n]);
-                    for (o = 1; o < 8; o++)
+                    s->lrgb2lrgb_coeffsf[m][n][0] = rgb2rgb[m][n];
+                    for (o = 1; o < 8; o++) {
                         s->lrgb2lrgb_coeffs[m][n][o] = s->lrgb2lrgb_coeffs[m][n][0];
+                        s->lrgb2lrgb_coeffsf[m][n][o] = s->lrgb2lrgb_coeffsf[m][n][0];
+                    }
                 }
 
             emms = 1;
@@ -519,30 +842,40 @@ static int create_filtergraph(AVFilterContext *ctx,
         s->out_trc = out->color_trc;
         s->out_txchr = get_transfer_characteristics(s->out_trc);
         if (!s->out_txchr) {
-            if (s->out_trc == AVCOL_TRC_UNSPECIFIED) {
-                if (s->user_all == CS_UNSPECIFIED) {
-                    av_log(ctx, AV_LOG_ERROR,
-                           "Please specify output transfer characteristics\n");
+            s->out_trc_fn = avpriv_get_trc_function_from_trc(s->out_trc);
+            if (!s->out_trc_fn) {
+                if (s->out_trc == AVCOL_TRC_UNSPECIFIED) {
+                    if (s->user_all == CS_UNSPECIFIED) {
+                        av_log(ctx, AV_LOG_ERROR,
+                            "Please specify output transfer characteristics\n");
+                    } else {
+                        av_log(ctx, AV_LOG_ERROR,
+                            "Unsupported output color property %d\n", s->user_all);
+                    }
                 } else {
                     av_log(ctx, AV_LOG_ERROR,
-                           "Unsupported output color property %d\n", s->user_all);
+                        "Unsupported output transfer characteristics %d (%s)\n",
+                        s->out_trc, av_color_transfer_name(s->out_trc));
                 }
-            } else {
-                av_log(ctx, AV_LOG_ERROR,
-                       "Unsupported output transfer characteristics %d (%s)\n",
-                       s->out_trc, av_color_transfer_name(s->out_trc));
+                return AVERROR(EINVAL);
             }
-            return AVERROR(EINVAL);
         }
     }
 
-    s->rgb2rgb_passthrough = s->fast_mode || (s->lrgb2lrgb_passthrough &&
+    s->rgb2rgb_passthrough = s->fast_mode || (s->lrgb2lrgb_passthrough && !s->out_trc_fn &&
                              !memcmp(s->in_txchr, s->out_txchr, sizeof(*s->in_txchr)));
     if (!s->rgb2rgb_passthrough && !s->lin_lut) {
-        res = fill_gamma_table(s);
-        if (res < 0)
-            return res;
-        emms = 1;
+        if (!s->is_float) {
+            res = fill_gamma_table(s);
+            if (res < 0)
+                return res;
+            emms = 1;
+        } else if (s->is_float16) {
+            res = fill_gamma_table_f16(s);
+            if (res < 0)
+                return res;
+            emms = 1;
+        }
     }
 
     if (!s->in_lumacoef) {
@@ -594,7 +927,7 @@ static int create_filtergraph(AVFilterContext *ctx,
                              !memcmp(s->in_lumacoef, s->out_lumacoef,
                                      sizeof(*s->in_lumacoef)) &&
                              in_desc->comp[0].depth == out_desc->comp[0].depth;
-    if (!s->yuv2yuv_passthrough) {
+    if (!s->yuv2yuv_passthrough && !(in_desc->flags & AV_PIX_FMT_FLAG_RGB)) {
         if (redo_yuv2rgb) {
             double rgb2yuv[3][3], (*yuv2rgb)[3] = s->yuv2rgb_dbl_coeffs;
             int off, bits, in_rng;
@@ -628,7 +961,7 @@ static int create_filtergraph(AVFilterContext *ctx,
             emms = 1;
         }
 
-        if (redo_rgb2yuv) {
+        if (redo_rgb2yuv && !(out_desc->flags & AV_PIX_FMT_FLAG_RGB)) {
             double (*rgb2yuv)[3] = s->rgb2yuv_dbl_coeffs;
             int off, out_rng, bits;
 
@@ -659,7 +992,7 @@ static int create_filtergraph(AVFilterContext *ctx,
             emms = 1;
         }
 
-        if (s->yuv2yuv_fastmode && (redo_yuv2rgb || redo_rgb2yuv)) {
+        if (s->yuv2yuv_fastmode && (redo_yuv2rgb || redo_rgb2yuv) && !(in_desc->flags & AV_PIX_FMT_FLAG_RGB)) {
             int idepth = in_desc->comp[0].depth, odepth = out_desc->comp[0].depth;
             double (*rgb2yuv)[3] = s->rgb2yuv_dbl_coeffs;
             double (*yuv2rgb)[3] = s->yuv2rgb_dbl_coeffs;
@@ -714,6 +1047,9 @@ static void uninit(AVFilterContext *ctx)
     av_freep(&s->dither_scratch_base[2][1]);
 
     av_freep(&s->lin_lut);
+
+    av_freep(&s->f2h_tbl);
+    av_freep(&s->h2f_tbl);
 }
 
 static int filter_frame(AVFilterLink *link, AVFrame *in)
@@ -726,7 +1062,11 @@ static int filter_frame(AVFilterLink *link, AVFrame *in)
     // and out_* are identical (not just their respective properties)
     AVFrame *out = ff_get_video_buffer(outlink, outlink->w, outlink->h);
     int res;
-    ptrdiff_t rgb_stride = FFALIGN(in->width * sizeof(int16_t), 32);
+
+    int pixel_size = (in->format == AV_PIX_FMT_GBRPF32 ||
+                      in->format == AV_PIX_FMT_GBRAPF32) ?
+                      sizeof(float) : sizeof(uint16_t);
+    ptrdiff_t rgb_stride = FFALIGN(in->width * pixel_size, 32);
     unsigned rgb_sz = rgb_stride * in->height;
     ThreadData td;
 
@@ -809,15 +1149,17 @@ static int filter_frame(AVFilterLink *link, AVFrame *in)
         av_frame_free(&out);
         return res;
     }
-    s->rgb_stride = rgb_stride / sizeof(int16_t);
+    s->rgb_stride = rgb_stride;
     td.in = in;
     td.out = out;
     td.in_linesize[0] = in->linesize[0];
     td.in_linesize[1] = in->linesize[1];
     td.in_linesize[2] = in->linesize[2];
+    td.in_linesize[3] = in->linesize[3];
     td.out_linesize[0] = out->linesize[0];
     td.out_linesize[1] = out->linesize[1];
     td.out_linesize[2] = out->linesize[2];
+    td.out_linesize[3] = out->linesize[3];
     td.in_ss_h = av_pix_fmt_desc_get(in->format)->log2_chroma_h;
     td.out_ss_h = av_pix_fmt_desc_get(out->format)->log2_chroma_h;
     if (s->yuv2yuv_passthrough) {
@@ -828,8 +1170,8 @@ static int filter_frame(AVFilterLink *link, AVFrame *in)
             return res;
         }
     } else {
-        ff_filter_execute(ctx, convert, &td, NULL,
-                          FFMIN((in->height + 1) >> 1, ff_filter_get_nb_threads(ctx)));
+        ff_filter_execute(ctx, s->is_float? s->is_float16? convert_f16 : convert_f32 : convert,
+                          &td, NULL, FFMIN((in->height + 1) >> 1, ff_filter_get_nb_threads(ctx)));
     }
     av_frame_free(&in);
 
@@ -843,6 +1185,8 @@ static int query_formats(AVFilterContext *ctx)
         AV_PIX_FMT_YUV420P10, AV_PIX_FMT_YUV422P10, AV_PIX_FMT_YUV444P10,
         AV_PIX_FMT_YUV420P12, AV_PIX_FMT_YUV422P12, AV_PIX_FMT_YUV444P12,
         AV_PIX_FMT_YUVJ420P,  AV_PIX_FMT_YUVJ422P,  AV_PIX_FMT_YUVJ444P,
+        AV_PIX_FMT_GBRPF16, AV_PIX_FMT_GBRAPF16,
+        AV_PIX_FMT_GBRPF32, AV_PIX_FMT_GBRAPF32,
         AV_PIX_FMT_NONE
     };
     int res;
@@ -954,6 +1298,12 @@ static const AVOption colorspace_options[] = {
     ENUM("iec61966-2-4", AVCOL_TRC_IEC61966_2_4, "trc"),
     ENUM("bt2020-10",    AVCOL_TRC_BT2020_10,    "trc"),
     ENUM("bt2020-12",    AVCOL_TRC_BT2020_12,    "trc"),
+    // output trc only
+    ENUM("log",          AVCOL_TRC_LOG,          "trc"),
+    ENUM("log_sqrt",     AVCOL_TRC_LOG_SQRT,     "trc"),
+    ENUM("bt1361",       AVCOL_TRC_BT1361_ECG,   "trc"),
+    ENUM("smpte2084",    AVCOL_TRC_SMPTEST2084,  "trc"),
+    ENUM("smpte428-1",   AVCOL_TRC_SMPTEST428_1, "trc"),
 
     { "format",   "Output pixel format",
       OFFSET(user_format), AV_OPT_TYPE_INT,  { .i64 = AV_PIX_FMT_NONE },
