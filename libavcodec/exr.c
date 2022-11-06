@@ -187,10 +187,6 @@ typedef struct EXRContext {
     const char *layer;
     int selected_part;
 
-    enum AVColorTransferCharacteristic apply_trc_type;
-    float gamma;
-    union av_intfloat32 gamma_table[65536];
-
     uint8_t *offset_table;
 
     Half2FloatTables h2f_tables;
@@ -1188,8 +1184,6 @@ static int decode_block(AVCodecContext *avctx, void *tdata,
     int data_xoffset, data_yoffset, data_window_offset, xsize, ysize;
     int i, x, buf_size = s->buf_size;
     int c, rgb_channel_count;
-    float one_gamma = 1.0f / s->gamma;
-    avpriv_trc_function trc_func = avpriv_get_trc_function_from_trc(s->apply_trc_type);
     int ret;
 
     line_offset = AV_RL64(s->gb.buffer + jobnr * 8);
@@ -1375,55 +1369,11 @@ static int decode_block(AVCodecContext *avctx, void *tdata,
             ptr = p->data[plane] + window_ymin * p->linesize[plane] + (window_xmin * step);
 
             for (i = 0; i < ysize; i++, ptr += p->linesize[plane]) {
-                const uint8_t *src;
-                union av_intfloat32 *ptr_x;
-
-                src = channel_buffer[c];
-                ptr_x = (union av_intfloat32 *)ptr;
-
                 // Zero out the start if xmin is not 0
                 memset(ptr, 0, bxmin);
-                ptr_x += window_xoffset;
 
-                if (!trc_func && one_gamma == 1.0f) {
-                    memcpy(ptr + bxmin, src, xsize * step);
-                } else if (s->pixel_type == EXR_FLOAT ||
-                           s->compression == EXR_DWAA ||
-                           s->compression == EXR_DWAB) {
-                    // 32-bit
-                    union av_intfloat32 t;
-                    if (trc_func && c < 3) {
-                        for (x = 0; x < xsize; x++) {
-                            t.i = bytestream_get_le32(&src);
-                            t.f = trc_func(t.f);
-                            *ptr_x++ = t;
-                        }
-                    } else if (one_gamma != 1.f) {
-                        for (x = 0; x < xsize; x++) {
-                            t.i = bytestream_get_le32(&src);
-                            if (t.f > 0.0f && c < 3)  /* avoid negative values */
-                                t.f = powf(t.f, one_gamma);
-                            *ptr_x++ = t;
-                        }
-                    } else {
-                        for (x = 0; x < xsize; x++) {
-                            t.i = bytestream_get_le32(&src);
-                            *ptr_x++ = t;
-                        }
-                    }
-                } else if (s->pixel_type == EXR_HALF) {
-                    // 16-bit
-                    if (c < 3 || !trc_func) {
-                        for (x = 0; x < xsize; x++) {
-                            *ptr_x++ = s->gamma_table[bytestream_get_le16(&src)];
-                        }
-                    } else {
-                        for (x = 0; x < xsize; x++) {
-                            ptr_x[0].i = half2float(bytestream_get_le16(&src), &s->h2f_tables);
-                            ptr_x++;
-                        }
-                    }
-                }
+                // Copy scanline of pixel data
+                memcpy(ptr + bxmin, channel_buffer[c], xsize * step);
 
                 // Zero out the end if xmax+1 is not w
                 memset(ptr + bxmin + xsize * step, 0, axmax);
@@ -2045,8 +1995,7 @@ static int decode_frame(AVCodecContext *avctx, AVFrame *picture,
             s->channel_offsets[i] *= 2;
     }
 
-    convertf32 =  (s->apply_trc_type != AVCOL_TRC_UNSPECIFIED || s->gamma != 1.0f ||
-                   s->compression == EXR_DWAA || s->compression == EXR_DWAB);
+    convertf32 =  (s->compression == EXR_DWAA || s->compression == EXR_DWAB);
 
     switch (s->pixel_type) {
     case EXR_HALF:
@@ -2100,9 +2049,6 @@ static int decode_frame(AVCodecContext *avctx, AVFrame *picture,
         av_log(avctx, AV_LOG_ERROR, "Missing channel list.\n");
         return AVERROR_INVALIDDATA;
     }
-
-    if (s->apply_trc_type != AVCOL_TRC_UNSPECIFIED)
-        avctx->color_trc = s->apply_trc_type;
 
     switch (s->compression) {
     case EXR_RAW:
@@ -2232,46 +2178,13 @@ static int decode_frame(AVCodecContext *avctx, AVFrame *picture,
 static av_cold int decode_init(AVCodecContext *avctx)
 {
     EXRContext *s = avctx->priv_data;
-    uint32_t i;
-    union av_intfloat32 t;
-    float one_gamma = 1.0f / s->gamma;
-    avpriv_trc_function trc_func = NULL;
-
     ff_init_half2float_tables(&s->h2f_tables);
-
-    s->avctx              = avctx;
-
+    s->avctx = avctx;
     ff_exrdsp_init(&s->dsp);
 
 #if HAVE_BIGENDIAN
     ff_bswapdsp_init(&s->bbdsp);
 #endif
-
-    trc_func = avpriv_get_trc_function_from_trc(s->apply_trc_type);
-    if (trc_func) {
-        for (i = 0; i < 65536; ++i) {
-            t.i = half2float(i, &s->h2f_tables);
-            t.f = trc_func(t.f);
-            s->gamma_table[i] = t;
-        }
-    } else {
-        if (one_gamma > 0.9999f && one_gamma < 1.0001f) {
-            for (i = 0; i < 65536; ++i) {
-                s->gamma_table[i].i = half2float(i, &s->h2f_tables);
-            }
-        } else {
-            for (i = 0; i < 65536; ++i) {
-                t.i = half2float(i, &s->h2f_tables);
-                /* If negative value we reuse half value */
-                if (t.f <= 0.0f) {
-                    s->gamma_table[i] = t;
-                } else {
-                    t.f = powf(t.f, one_gamma);
-                    s->gamma_table[i] = t;
-                }
-            }
-        }
-    }
 
     // allocate thread data, used for non EXR_RAW compression types
     s->thread_data = av_calloc(avctx->thread_count, sizeof(*s->thread_data));
@@ -2314,45 +2227,6 @@ static const AVOption options[] = {
         AV_OPT_TYPE_STRING, { .str = "" }, 0, 0, VD },
     { "part",  "Set the decoding part", OFFSET(selected_part),
         AV_OPT_TYPE_INT, { .i64 = 0 }, 0, INT_MAX, VD },
-    { "gamma", "Set the float gamma value when decoding", OFFSET(gamma),
-        AV_OPT_TYPE_FLOAT, { .dbl = 1.0f }, 0.001, FLT_MAX, VD },
-
-    // XXX: Note the abuse of the enum using AVCOL_TRC_UNSPECIFIED to subsume the existing gamma option
-    { "apply_trc", "color transfer characteristics to apply to EXR linear input", OFFSET(apply_trc_type),
-        AV_OPT_TYPE_INT, {.i64 = AVCOL_TRC_UNSPECIFIED }, 1, AVCOL_TRC_NB-1, VD, "apply_trc_type"},
-    { "bt709",        "BT.709",           0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_BT709 },        INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "gamma",        "gamma",            0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_UNSPECIFIED },  INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "gamma22",      "BT.470 M",         0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_GAMMA22 },      INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "gamma28",      "BT.470 BG",        0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_GAMMA28 },      INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "smpte170m",    "SMPTE 170 M",      0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_SMPTE170M },    INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "smpte240m",    "SMPTE 240 M",      0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_SMPTE240M },    INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "linear",       "Linear",           0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_LINEAR },       INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "log",          "Log",              0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_LOG },          INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "log_sqrt",     "Log square root",  0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_LOG_SQRT },     INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "iec61966_2_4", "IEC 61966-2-4",    0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_IEC61966_2_4 }, INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "bt1361",       "BT.1361",          0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_BT1361_ECG },   INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "iec61966_2_1", "IEC 61966-2-1",    0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_IEC61966_2_1 }, INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "bt2020_10bit", "BT.2020 - 10 bit", 0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_BT2020_10 },    INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "bt2020_12bit", "BT.2020 - 12 bit", 0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_BT2020_12 },    INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "smpte2084",    "SMPTE ST 2084",    0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_SMPTEST2084 },  INT_MIN, INT_MAX, VD, "apply_trc_type"},
-    { "smpte428_1",   "SMPTE ST 428-1",   0,
-        AV_OPT_TYPE_CONST, {.i64 = AVCOL_TRC_SMPTEST428_1 }, INT_MIN, INT_MAX, VD, "apply_trc_type"},
-
     { NULL },
 };
 
