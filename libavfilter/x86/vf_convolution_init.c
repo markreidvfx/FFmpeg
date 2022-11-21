@@ -53,6 +53,7 @@ av_cold void ff_convolution_init_x86(ConvolutionContext *s)
 av_cold void ff_sobel_init_x86(ConvolutionContext *s, int depth, int nb_planes)
 {
 #if ARCH_X86_64
+#if HAVE_AVX512_EXTERNAL
     int cpu_flags = av_get_cpu_flags();
     for (int i = 0; i < nb_planes; i++) {
         if (depth == 8) {
@@ -60,5 +61,6 @@ av_cold void ff_sobel_init_x86(ConvolutionContext *s, int depth, int nb_planes)
                 s->filter[i] = ff_filter_sobel_avx512icl;
         }
     }
+#endif
 #endif
 }
